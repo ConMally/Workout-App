@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(npm --version)",
+      "Bash(ant auth *)",
+      "Bash(xcode-select -p)",
+      "Bash(find / -maxdepth 4 -iname \"node\" -type f)",
+      "Bash(npm -v)",
+      "Bash(npm uninstall *)",
+      "Bash(npx tsc *)",
+      "Bash(rm -rf .next)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000/api/generate -X POST -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s http://localhost:3000/api/generate -X POST -H \"Content-Type: application/json\" -d '{\"goal\":\"build_muscle\",\"experienceLevel\":\"intermediate\",\"daysPerWeek\":3,\"equipment\":[\"full_gym\"],\"sessionDurationMinutes\":60,\"injuriesOrLimitations\":\"\",\"exercisePreferences\":\"I dislike squats\"}')",
+      "Bash(curl -s http://localhost:3000/api/generate -X POST -H \"Content-Type: application/json\" -d '{\"goal\":\"general_fitness\",\"experienceLevel\":\"beginner\",\"daysPerWeek\":3,\"equipment\":[\"bodyweight_only\"],\"sessionDurationMinutes\":40,\"injuriesOrLimitations\":\"\",\"exercisePreferences\":\"I dislike push-ups\"}')",
+      "Bash(curl -s http://localhost:3000/api/generate -X POST -H \"Content-Type: application/json\" -d '{\"goal\":\"general_fitness\",\"experienceLevel\":\"beginner\",\"daysPerWeek\":3,\"equipment\":[\"dumbbells\"],\"sessionDurationMinutes\":40,\"injuriesOrLimitations\":\"minor left knee soreness after running\",\"exercisePreferences\":\"\"}')",
+      "Bash(curl -s http://localhost:3000/api/generate -X POST -H \"Content-Type: application/json\" -d '{\"goal\":\"general_fitness\",\"experienceLevel\":\"beginner\",\"daysPerWeek\":3,\"equipment\":[\"dumbbells\"],\"sessionDurationMinutes\":40,\"injuriesOrLimitations\":\"I am currently pregnant\",\"exercisePreferences\":\"\"}')",
+      "Bash(jq)",
+      "Bash(npx next *)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(npx eslint *)",
+      "Bash(npm ls *)"
+    ]
+  }
+}
