@@ -3,6 +3,7 @@ import { OnboardingInputSchema, WorkoutPlanSchema } from "@/lib/schemas";
 import { checkForRedFlags, SAFETY_DECLINE_MESSAGES } from "@/lib/safety";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { generateWorkoutPlan } from "@/lib/workout-generator";
+import { createClient } from "@/lib/supabase/server";
 
 // This route no longer calls any external API — the plan is generated
 // entirely by lib/workout-generator.ts. No API key is required.
@@ -17,6 +18,19 @@ function getClientKey(request: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
+  // 0. proxy.ts already blocks this route for signed-out requests — this is
+  // the same defense-in-depth re-check every other data-touching entry
+  // point in this app makes (see app/account/page.tsx), never trusting
+  // middleware alone. This route doesn't read/write any stored data itself,
+  // but it's still app functionality gated behind sign-in now.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ status: "error", error: "unauthorized", message: "Sign in required." }, { status: 401 });
+  }
+
   // 1. Rate limit first — cheapest check, protects everything downstream.
   const clientKey = getClientKey(request);
   const rateLimit = checkRateLimit(clientKey);

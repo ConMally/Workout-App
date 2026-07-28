@@ -1,57 +1,27 @@
 "use client";
 
-import { useRef, useState } from "react";
 import type { AppSettings, WeightUnit } from "@/types/workout-log";
 
 interface SettingsPanelProps {
   settings: AppSettings;
   hasActiveWorkout: boolean;
-  // Export/import only ever reads and writes localStorage — there is no
-  // cloud equivalent yet, so this section is hidden entirely for signed-in
-  // (cloud-backed) users rather than shown disabled or silently no-op'ing.
-  isLocalMode: boolean;
   onToggleAutoStart: (enabled: boolean) => void;
   onSetWeightUnit: (unit: WeightUnit) => void;
   onClearActiveWorkout: () => void;
-  onExportData: () => void;
-  onImportData: (file: File) => Promise<boolean>;
 }
 
 export default function SettingsPanel({
   settings,
   hasActiveWorkout,
-  isLocalMode,
   onToggleAutoStart,
   onSetWeightUnit,
   onClearActiveWorkout,
-  onExportData,
-  onImportData,
 }: SettingsPanelProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
   function handleClearActiveWorkout() {
     if (hasActiveWorkout && !window.confirm("Discard your in-progress workout? This can't be undone.")) {
       return;
     }
     onClearActiveWorkout();
-  }
-
-  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
-    if (!window.confirm("Importing will overwrite your current plan, history, and settings. Continue?")) {
-      return;
-    }
-
-    const success = await onImportData(file);
-    setImportMessage(
-      success
-        ? { type: "success", text: "Data imported successfully." }
-        : { type: "error", text: "That file isn't a valid export — nothing was changed." }
-    );
   }
 
   return (
@@ -119,58 +89,13 @@ export default function SettingsPanel({
           </button>
         </div>
 
-        {isLocalMode && (
-          <div className="flex flex-wrap items-center justify-between gap-3 py-3 last:pb-0">
-            <div>
-              <p className="text-sm font-medium text-slate-800">Your data</p>
-              <p className="text-xs text-slate-500">Back up everything to a file, or restore from one.</p>
-            </div>
-            <div className="flex flex-shrink-0 gap-2">
-              <button
-                type="button"
-                onClick={onExportData}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Export data
-              </button>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Import data
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/json"
-                onChange={handleImportFile}
-                className="hidden"
-              />
-            </div>
-          </div>
-        )}
-
-        {!isLocalMode && (
-          <div className="py-3 last:pb-0">
-            <p className="text-sm font-medium text-slate-800">Your data</p>
-            <p className="text-xs text-slate-500">
-              Your workout data is stored in your account and backed up automatically. Export/import is only
-              available in local (signed-out) mode.
-            </p>
-          </div>
-        )}
+        <div className="py-3 last:pb-0">
+          <p className="text-sm font-medium text-slate-800">Your data</p>
+          <p className="text-xs text-slate-500">
+            Your workout data is stored in your account and backed up automatically.
+          </p>
+        </div>
       </div>
-
-      {importMessage && (
-        <p
-          className={`mt-3 rounded-lg px-3 py-2 text-xs font-medium ${
-            importMessage.type === "success" ? "bg-teal-50 text-teal-800" : "bg-red-50 text-red-700"
-          }`}
-        >
-          {importMessage.text}
-        </p>
-      )}
       </div>
     </div>
   );

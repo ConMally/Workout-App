@@ -7,7 +7,11 @@ import { initialActionState } from "@/lib/auth/action-state";
 import PasswordInput from "@/components/auth/PasswordInput";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
-export default function SignUpForm() {
+interface SignUpFormProps {
+  redirectTo?: string;
+}
+
+export default function SignUpForm({ redirectTo }: SignUpFormProps) {
   const [state, formAction, pending] = useActionState(signUp, initialActionState);
 
   if (state.status === "success") {
@@ -24,6 +28,8 @@ export default function SignUpForm() {
   return (
     <div className="flex flex-col gap-5">
       <form action={formAction} className="flex flex-col gap-4">
+        {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
+
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-slate-700">
             Email
@@ -76,7 +82,7 @@ export default function SignUpForm() {
         <span className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <GoogleSignInButton />
+      <GoogleSignInButton redirectTo={redirectTo} />
 
       <p className="text-center text-sm text-slate-500">
         Already have an account?{" "}

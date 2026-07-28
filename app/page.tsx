@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import OnboardingForm, { type OnboardingFormValues } from "@/components/OnboardingForm";
 import WorkoutPlanView from "@/components/WorkoutPlanView";
 import LoadingState from "@/components/LoadingState";
@@ -16,7 +17,6 @@ import InsightsPage from "@/components/insights/InsightsPage";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import ExerciseProgressDetail from "@/components/exercises/ExerciseProgressDetail";
 import AppHeader from "@/components/layout/AppHeader";
-import LocalDataNotice from "@/components/auth/LocalDataNotice";
 import MigrationBanner from "@/components/migration/MigrationBanner";
 import TemplateList from "@/components/templates/TemplateList";
 import SaveAsTemplateDialog from "@/components/templates/SaveAsTemplateDialog";
@@ -39,17 +39,7 @@ import {
   type Readiness,
   type WeightUnit,
 } from "@/types/workout-log";
-import {
-  exportAllData,
-  importAllData,
-  readActiveWorkout,
-  readGoals,
-  readHistory,
-  readSavedPlan,
-  readSettings,
-  readSubstitutionHistory,
-  type SubstitutionHistory,
-} from "@/lib/storage";
+import { type SubstitutionHistory } from "@/lib/storage";
 import { computeDurationSeconds, createActiveWorkout } from "@/lib/workout-log";
 import { detectPersonalRecords } from "@/lib/progression";
 import { getSubstitute } from "@/lib/exercise-substitutions";
@@ -106,6 +96,7 @@ async function loadDomain<T>(domain: string, promise: Promise<T>): Promise<T> {
 }
 
 export default function Home() {
+  const router = useRouter();
   const reposState = useRepositories();
 
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -150,11 +141,12 @@ export default function Home() {
   useEffect(() => {
     if (reposState.status !== "ready") return;
 
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
-    // Built here (not inside load()) so TS's narrowing of reposState by
-    // `mode` — only valid within this synchronous closure scope — applies.
-    const weeklyTargetPromise = mode === "cloud" ? fetchWeeklyTarget(reposState.userId) : Promise.resolve(null);
+    const { repositories, userId } = reposState;
+    // Built here (not inside load()) rather than awaited inline below, same
+    // as every other domain in the Promise.all — reposState.status === "ready"
+    // now always means a signed-in cloud session (this app has no
+    // local/guest mode), so this always runs.
+    const weeklyTargetPromise = fetchWeeklyTarget(userId);
     let cancelled = false;
 
     setIsLoadingData(true);
@@ -249,8 +241,7 @@ export default function Home() {
 
   async function generatePlan(values: OnboardingFormValues) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const isFirstPlan = !hasGeneratedBefore;
     setFormValues(values);
@@ -297,8 +288,7 @@ export default function Home() {
 
   function handleStartOver() {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const parts = ["This will clear your saved plan and preferences."];
     if (activeWorkout) {
@@ -326,8 +316,7 @@ export default function Home() {
     const day = view.plan.weeklySchedule[dayIndex];
     if (!day) return;
 
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const workout = createActiveWorkout(day, dayIndex);
     setActiveWorkout(workout);
@@ -337,8 +326,7 @@ export default function Home() {
 
   function handleUpdateActiveWorkout(workout: ActiveWorkout) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     setActiveWorkout(workout);
     runMutation(() => repositories.activeWorkout.saveActiveWorkout(userId, workout));
@@ -346,8 +334,7 @@ export default function Home() {
 
   function handleToggleAutoStart(enabled: boolean) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const next = { ...settings, autoStartRestTimer: enabled };
     setSettings(next);
@@ -356,8 +343,7 @@ export default function Home() {
 
   function handleSetWeightUnit(unit: WeightUnit) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const next = { ...settings, weightUnit: unit };
     setSettings(next);
@@ -402,8 +388,7 @@ export default function Home() {
   // 0004_pr_uniqueness.sql), makes every step of this safely retryable.
   async function finalizeWorkout(readiness: Readiness | null) {
     if (!pendingCompletion || reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const completed: CompletedWorkout = { ...pendingCompletion, readiness };
     const prEvents = detectPersonalRecords(history, completed);
@@ -441,8 +426,7 @@ export default function Home() {
 
   function handleDiscardWorkout() {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     runMutation(() => repositories.activeWorkout.clearActiveWorkout(userId));
     setActiveWorkout(null);
@@ -452,8 +436,7 @@ export default function Home() {
 
   function handleClearActiveWorkoutFromSettings() {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     runMutation(() => repositories.activeWorkout.clearActiveWorkout(userId));
     setActiveWorkout(null);
@@ -467,8 +450,7 @@ export default function Home() {
     const exercise = day?.exercises[exerciseIndex];
     if (!day || !exercise) return;
 
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const key = `${dayIndex}:${exerciseIndex}`;
     const excludeNames = substitutionHistory[key] ?? [exercise.name];
@@ -501,8 +483,7 @@ export default function Home() {
 
   function handleCreateGoal(goal: Goal) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     setGoals([goal, ...goals]);
     runMutation(() => repositories.goals.createGoal(userId, goal));
@@ -510,8 +491,7 @@ export default function Home() {
 
   function handleUpdateGoal(goal: Goal) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     setGoals(goals.map((g) => (g.id === goal.id ? goal : g)));
     runMutation(() => repositories.goals.updateGoal(userId, goal));
@@ -519,8 +499,7 @@ export default function Home() {
 
   function handleDeleteGoal(id: string) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     setGoals(goals.filter((g) => g.id !== id));
     runMutation(() => repositories.goals.deleteGoal(userId, id));
@@ -533,8 +512,7 @@ export default function Home() {
   // directly to the action, not just the page's global saveError banner.
   async function handleCreateTemplate(input: TemplateEditorSubmitInput) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const template = buildTemplate(input);
     await repositories.templates.createTemplate(userId, template);
@@ -543,8 +521,7 @@ export default function Home() {
 
   async function handleUpdateTemplate(template: WorkoutTemplate) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     await repositories.templates.updateTemplate(userId, template);
     setTemplates((prev) => prev.map((t) => (t.id === template.id ? toTemplateSummary(template) : t)));
@@ -552,8 +529,7 @@ export default function Home() {
 
   async function handleDeleteTemplate(templateId: string) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     await repositories.templates.deleteTemplate(userId, templateId);
     setTemplates((prev) => prev.filter((t) => t.id !== templateId));
@@ -561,8 +537,7 @@ export default function Home() {
 
   async function handleDuplicateTemplate(templateId: string, newName: string) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const copy = await repositories.templates.duplicateTemplate(userId, templateId, newName);
     setTemplates((prev) => [toTemplateSummary(copy), ...prev]);
@@ -570,8 +545,7 @@ export default function Home() {
 
   async function handleLoadTemplate(templateId: string): Promise<WorkoutTemplate | null> {
     if (reposState.status !== "ready") return null;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
     return repositories.templates.getTemplate(userId, templateId);
   }
 
@@ -580,8 +554,7 @@ export default function Home() {
   // so this composes with the existing plan flow rather than a parallel path.
   async function handleUseTemplate(templateId: string) {
     if (reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     const summary = templates.find((t) => t.id === templateId);
     const plan = await repositories.templates.createWorkoutFromTemplate(userId, templateId);
@@ -612,8 +585,7 @@ export default function Home() {
 
   async function handleSaveAsTemplate(name: string, description: string | null) {
     if (view.status !== "plan" || reposState.status !== "ready") return;
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
 
     setSavingTemplate(true);
     setSaveTemplateError(null);
@@ -634,60 +606,20 @@ export default function Home() {
     }
   }
 
-  // Backup export/import only ever operates on localStorage — there is no
-  // cloud equivalent this phase (see lib/repositories/supabase/index.ts;
-  // no repository exposes a bulk export). SettingsPanel only renders these
-  // as active when isLocalMode is true.
-  function handleExportData() {
-    const data = exportAllData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `workout-app-export-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+  // This app has no guest/local mode — reaching this with no session means
+  // the client-side auth state changed after the page already mounted
+  // (session expired, revoked, or signed out in another tab). proxy.ts
+  // blocks the initial request for every signed-out visitor server-side, so
+  // this is the client-side backstop: bounce to /login immediately rather
+  // than rendering (or leaving stale) any protected content, and preserve
+  // the current location so login can send them back.
+  useEffect(() => {
+    if (reposState.status !== "unauthenticated") return;
+    const here = `${window.location.pathname}${window.location.search}`;
+    router.replace(`/login?redirectTo=${encodeURIComponent(here)}`);
+  }, [reposState.status, router]);
 
-  async function handleImportData(file: File): Promise<boolean> {
-    try {
-      const text = await file.text();
-      const parsed: unknown = JSON.parse(text);
-      const success = importAllData(parsed);
-      if (!success) return false;
-
-      const savedPlan = readSavedPlan();
-      if (savedPlan) {
-        setFormValues(savedPlan.preferences);
-        setView({ status: "plan", plan: savedPlan.plan });
-        setHasGeneratedBefore(true);
-      } else {
-        setFormValues(DEFAULT_FORM_VALUES);
-        setView({ status: "form" });
-        setHasGeneratedBefore(false);
-      }
-
-      const savedActiveWorkout = readActiveWorkout();
-      setActiveWorkout(savedActiveWorkout);
-      setPendingCompletion(null);
-      setHistory(readHistory());
-      setSettings(readSettings());
-      setSubstitutionHistory(readSubstitutionHistory());
-      setGoals(readGoals());
-      setSelectedHistoryId(null);
-      setSelectedExercise(null);
-      setRecentPRs([]);
-      setActiveTab(savedActiveWorkout ? "workout" : savedPlan ? "dashboard" : "plan");
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  if (reposState.status === "loading" || isLoadingData) {
+  if (reposState.status === "loading" || reposState.status === "unauthenticated" || isLoadingData) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
         <LoadingState />
@@ -708,14 +640,12 @@ export default function Home() {
   }
 
   const currentPlan = view.status === "plan" ? view.plan : null;
-  const isLocalMode = reposState.mode === "local";
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
       <AppHeader activeTab={activeTab} onTabChange={setActiveTab} hasActiveWorkout={activeWorkout !== null} variant="app" />
 
       <Disclaimer />
-      <LocalDataNotice />
       <MigrationBanner />
 
       {saveError && (
@@ -876,12 +806,9 @@ export default function Home() {
             <SettingsPanel
               settings={settings}
               hasActiveWorkout={activeWorkout !== null}
-              isLocalMode={isLocalMode}
               onToggleAutoStart={handleToggleAutoStart}
               onSetWeightUnit={handleSetWeightUnit}
               onClearActiveWorkout={handleClearActiveWorkoutFromSettings}
-              onExportData={handleExportData}
-              onImportData={handleImportData}
             />
           )}
         </>

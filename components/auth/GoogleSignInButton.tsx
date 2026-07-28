@@ -1,12 +1,17 @@
 import { signInWithGoogle } from "@/app/(auth)/actions";
 
+interface GoogleSignInButtonProps {
+  redirectTo?: string;
+}
+
 // Requires the Google provider to be enabled in the Supabase dashboard —
 // see docs/AUTHENTICATION.md. Works even if it isn't: the action redirects
 // to /login?error=oauth_unavailable with a friendly message instead of
 // throwing.
-export default function GoogleSignInButton() {
+export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonProps) {
   return (
     <form action={signInWithGoogle}>
+      {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
       <button
         type="submit"
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"

@@ -3,25 +3,32 @@
 import { useMemo } from "react";
 import { useAuthStatus } from "@/components/auth/useAuthStatus";
 import { createClient } from "@/lib/supabase/client";
-import { localRepositories } from "./local";
 import { createSupabaseRepositories } from "./supabase";
 import type { Repositories } from "./types";
 
 export type RepositoriesState =
   | { status: "loading" }
-  | { status: "ready"; mode: "local"; userId: null; repositories: Repositories }
+  // No session — this app has no guest/local-only mode. Callers must never
+  // treat this as "safe to read/write local data" and must never fall back
+  // to a local repository bundle here; the only correct response is to
+  // route the visitor to /login (proxy.ts already does this server-side for
+  // the initial request — this variant exists for the client-side case
+  // where a session expires/is revoked after the page has already mounted).
+  | { status: "unauthenticated" }
   | { status: "ready"; mode: "cloud"; userId: string; repositories: Repositories };
 
-// The single place that decides local vs. Supabase-backed repositories for
-// the whole app, keyed off the same session useAuthStatus already tracks.
-// Nothing else should branch on auth status to pick a data source or call
-// Supabase directly — see lib/repositories/types.ts.
+// The single place that resolves Supabase-backed repositories for the whole
+// app, keyed off the same session useAuthStatus already tracks. Nothing
+// else should branch on auth status to pick a data source or call Supabase
+// directly — see lib/repositories/types.ts.
 //
 // While the initial session check is in flight ("loading"), this returns
-// {status: "loading"} rather than falling back to local repositories —
-// reading localStorage before we know whether the visitor is signed in
-// risks briefly showing anonymous data that a signed-in fetch is about to
-// replace. Callers should render a loading state for that case.
+// {status: "loading"} rather than resolving anything — reading data before
+// we know whether the visitor is signed in risks briefly showing another
+// account's data (or none) right before the real fetch replaces it.
+// Callers should render a loading state for that case, and a
+// redirect-to-login state for "unauthenticated" (never rendered app
+// content — see the RepositoriesState doc above).
 //
 // The returned object is itself memoized (stable reference whenever
 // status/userId/repositories haven't changed) specifically so callers can
@@ -51,6 +58,6 @@ export function useRepositories(): RepositoriesState {
       return { status: "ready", mode: "cloud", userId, repositories: cloudRepositories };
     }
 
-    return { status: "ready", mode: "local", userId: null, repositories: localRepositories };
+    return { status: "unauthenticated" };
   }, [status, userId, cloudRepositories]);
 }

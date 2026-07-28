@@ -27,10 +27,13 @@ async function getSiteOrigin(): Promise<string> {
 }
 
 // Only ever redirect to a relative, same-app path — never let a
-// client-supplied `redirectTo` send someone off-site.
+// client-supplied `redirectTo` send someone off-site. Falls back to "/"
+// (the app's single protected entry point) rather than a fixed page, since
+// there's no guest mode to fall back to and not every sign-in started from
+// a specific deep link.
 function safeRedirectPath(path: FormDataEntryValue | null): string {
   if (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//") || path.includes("://")) {
-    return "/account";
+    return "/";
   }
   return path;
 }
@@ -45,12 +48,13 @@ export async function signUp(_prevState: ActionResult, formData: FormData): Prom
     return { status: "error", message: "Please fix the errors below.", fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
+  const redirectTo = safeRedirectPath(formData.get("redirectTo"));
   const origin = await getSiteOrigin();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=/account` },
+    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
   });
 
   if (error) {
@@ -60,7 +64,7 @@ export async function signUp(_prevState: ActionResult, formData: FormData): Prom
   if (data.session) {
     // Email confirmation is off on this project — the user is already
     // signed in.
-    redirect("/account");
+    redirect(redirectTo);
   }
 
   return { status: "success", message: "Check your email to confirm your account, then log in." };
@@ -87,7 +91,11 @@ export async function logIn(_prevState: ActionResult, formData: FormData): Promi
 export async function logOut(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/");
+  // Straight to /login, not "/" — every app route requires a session now,
+  // so redirecting to "/" would just bounce through proxy.ts's own
+  // sign-out redirect a moment later. Going there directly also means no
+  // protected content is ever requested (let alone rendered) post-sign-out.
+  redirect("/login");
 }
 
 export async function requestPasswordReset(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -140,12 +148,13 @@ export async function resetPassword(_prevState: ActionResult, formData: FormData
 
 // Google OAuth — the Supabase provider and redirect URLs must be
 // configured manually in the dashboard; see docs/AUTHENTICATION.md.
-export async function signInWithGoogle(): Promise<void> {
+export async function signInWithGoogle(formData: FormData): Promise<void> {
+  const redirectTo = safeRedirectPath(formData.get("redirectTo"));
   const origin = await getSiteOrigin();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${origin}/auth/callback?next=/account` },
+    options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
   });
 
   if (error || !data.url) {

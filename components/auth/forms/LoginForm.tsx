@@ -70,7 +70,7 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
         <span className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <GoogleSignInButton />
+      <GoogleSignInButton redirectTo={redirectTo} />
 
       <p className="text-center text-sm text-slate-500">
         Don&apos;t have an account?{" "}

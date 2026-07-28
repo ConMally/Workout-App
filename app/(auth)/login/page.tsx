@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import LoginForm from "@/components/auth/forms/LoginForm";
 import SupabaseNotConfigured from "@/components/auth/SupabaseNotConfigured";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Log In — AI Workout Plan Generator" };
 
@@ -14,13 +16,24 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     return <SupabaseNotConfigured />;
   }
 
+  // proxy.ts already redirects a signed-in visitor away from /login — this
+  // is the defense-in-depth re-check every protected/auth-entry route in
+  // this app makes, never trusting middleware alone.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    redirect("/");
+  }
+
   const params = await searchParams;
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-bold text-slate-900">Log in</h1>
-        <p className="mt-1 text-sm text-slate-500">Welcome back. Your local data stays on this device either way.</p>
+        <p className="mt-1 text-sm text-slate-500">Welcome back.</p>
       </div>
 
       {params.error === "invalid_link" && (

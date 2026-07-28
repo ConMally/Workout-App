@@ -25,16 +25,15 @@ export default function AppHeader({ activeTab, onTabChange, hasActiveWorkout: ha
 
   // Only needed when the caller didn't already know (e.g. /account, which
   // has no other reason to track active-workout state). Goes through the
-  // same repository selection as everywhere else — local storage when
-  // signed out, Supabase when signed in — rather than reading localStorage
-  // directly, which would always report "no active workout" for a
-  // signed-in user whose active workout lives in the cloud.
+  // same repository selection as everywhere else rather than reading
+  // Supabase directly — proxy.ts guarantees this only ever renders for a
+  // signed-in visitor, so reposState resolves to "ready" or briefly
+  // "loading"/"unauthenticated" during the client-side auth check.
   useEffect(() => {
     if (hasActiveWorkoutProp !== undefined) return;
     if (reposState.status !== "ready") return;
 
-    const { repositories, mode } = reposState;
-    const userId = mode === "cloud" ? reposState.userId : "local";
+    const { repositories, userId } = reposState;
     let cancelled = false;
 
     repositories.activeWorkout

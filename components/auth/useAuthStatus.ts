@@ -10,7 +10,8 @@ export interface AuthStatusValue {
   userId: string | null;
 }
 
-// Shared by AuthStatus (nav widget) and LocalDataNotice so both agree on
+// Shared by every client component that needs to know sign-in state (the
+// nav widget, the migration eligibility hook, etc.) so they all agree on
 // auth state from a single subscription rather than each creating their
 // own browser client. Client-side only — reads the session Supabase
 // already manages via cookies, never calls a server action just to check
