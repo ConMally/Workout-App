@@ -10,6 +10,7 @@ import {
   type AppSettings,
 } from "@/types/workout-log";
 import { GoalListSchema, type Goal } from "@/types/goals";
+import { WorkoutTemplateSchema, type WorkoutTemplate } from "@/types/templates";
 
 // A small, reusable, versioned localStorage persistence layer.
 //
@@ -204,6 +205,23 @@ export function writeGoals(goals: Goal[]): void {
 }
 
 // ---------------------------------------------------------------------------
+// Workout templates — reusable, user-authored blueprints (see
+// types/templates.ts). Distinct from the single saved plan above.
+// ---------------------------------------------------------------------------
+
+const TEMPLATES_KEY = "templates";
+const TEMPLATES_VERSION = 1;
+const TemplateListSchema = z.array(WorkoutTemplateSchema);
+
+export function readTemplates(): WorkoutTemplate[] {
+  return readEnvelope(TEMPLATES_KEY, TemplateListSchema, TEMPLATES_VERSION) ?? [];
+}
+
+export function writeTemplates(templates: WorkoutTemplate[]): void {
+  writeEnvelope(TEMPLATES_KEY, templates, TEMPLATES_VERSION);
+}
+
+// ---------------------------------------------------------------------------
 // Export / import — bundles every stored key into one JSON snapshot so a
 // user can back up or move their data. Business logic (shape + validation)
 // lives here; the Settings UI only handles the file save/open mechanics.
@@ -226,6 +244,9 @@ const ExportedDataSchema = z.object({
   // Additive + defaulted (not a version bump) so export files created
   // before goal tracking existed still import cleanly with goals: [].
   goals: GoalListSchema.default([]),
+  // Same additive pattern for templates (Phase 4A) — older export files
+  // import cleanly with templates: [].
+  templates: TemplateListSchema.default([]),
 });
 export type ExportedData = z.infer<typeof ExportedDataSchema>;
 
@@ -239,6 +260,7 @@ export function exportAllData(): ExportedData {
     settings: readSettings(),
     substitutions: readSubstitutionHistory(),
     goals: readGoals(),
+    templates: readTemplates(),
   };
 }
 
@@ -254,6 +276,7 @@ export function clearAllLocalAppData(): void {
   removeKey(SETTINGS_KEY);
   removeKey(SUBSTITUTIONS_KEY);
   removeKey(GOALS_KEY);
+  removeKey(TEMPLATES_KEY);
 }
 
 export function importAllData(raw: unknown): boolean {
@@ -271,5 +294,6 @@ export function importAllData(raw: unknown): boolean {
   writeSettings(data.settings);
   writeSubstitutionHistory(data.substitutions);
   writeGoals(data.goals);
+  writeTemplates(data.templates);
   return true;
 }

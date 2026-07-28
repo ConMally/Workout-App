@@ -15,8 +15,17 @@ type ExerciseRow = Database["public"]["Tables"]["completed_workout_exercises"]["
 type SetRow = Database["public"]["Tables"]["completed_workout_sets"]["Row"];
 type ReadinessRow = Database["public"]["Tables"]["readiness_checkins"]["Row"];
 type WorkoutRowWithChildren = WorkoutRow & {
+  // completed_workout_exercises and completed_workout_sets are each unique
+  // only on a composite key (completed_workout_id, sort_order) and
+  // (completed_workout_exercise_id, set_number) respectively, so PostgREST
+  // treats them as genuine to-many embeds and always returns an array —
+  // `[]` when empty, never `null`.
   completed_workout_exercises: (ExerciseRow & { completed_workout_sets: SetRow[] })[];
-  readiness_checkins: ReadinessRow[];
+  // readiness_checkins.completed_workout_id carries a *lone* `unique`
+  // constraint (see 0001_init.sql), which PostgREST treats as a to-one
+  // relationship — the embed comes back as a single object or `null`, never
+  // wrapped in an array, unlike the two fields above.
+  readiness_checkins: ReadinessRow | ReadinessRow[] | null;
 };
 
 function toReadiness(row: ReadinessRow): Readiness {
@@ -29,9 +38,32 @@ function toReadiness(row: ReadinessRow): Readiness {
   };
 }
 
+// readiness_checkins is a to-one embed (see the field comment above) and so
+// is normally a single object or null — but is normalized to also accept an
+// array here in case a future schema change (e.g. dropping the unique
+// constraint) ever changes PostgREST's inferred cardinality.
+function extractReadinessRow(embed: ReadinessRow | ReadinessRow[] | null): ReadinessRow | null {
+  if (embed === null) return null;
+  return Array.isArray(embed) ? (embed[0] ?? null) : embed;
+}
+
+// completed_workout_exercises/completed_workout_sets are guaranteed by
+// PostgREST to come back as arrays (see the field comment above) — anything
+// else means the response shape doesn't match what the schema promises, not
+// a legitimate empty state, so it's surfaced as a descriptive error rather
+// than silently treated as "no exercises"/"no sets" (which would drop real
+// data without any signal).
+function requireArray<T>(value: T[] | null | undefined, field: string, workoutId: string): T[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`Completed workout ${workoutId} has a malformed "${field}" field: expected an array.`);
+  }
+  return value;
+}
+
 function toCompletedWorkout(row: WorkoutRowWithChildren): CompletedWorkout {
-  const exercises = [...row.completed_workout_exercises].sort((a, b) => a.sort_order - b.sort_order);
-  const readinessRow = row.readiness_checkins[0];
+  const exerciseRows = requireArray(row.completed_workout_exercises, "completed_workout_exercises", row.id);
+  const exercises = [...exerciseRows].sort((a, b) => a.sort_order - b.sort_order);
+  const readinessRow = extractReadinessRow(row.readiness_checkins);
 
   return {
     id: row.id,
@@ -41,22 +73,25 @@ function toCompletedWorkout(row: WorkoutRowWithChildren): CompletedWorkout {
     dayTitle: row.day_title,
     dayFocus: row.day_focus,
     durationSeconds: row.duration_seconds,
-    exercises: exercises.map((exercise) => ({
-      name: exercise.name,
-      targetSets: exercise.target_sets,
-      targetReps: exercise.target_reps,
-      targetRestSeconds: exercise.target_rest_seconds,
-      completed: exercise.completed,
-      note: exercise.note,
-      sets: [...exercise.completed_workout_sets]
-        .sort((a, b) => a.set_number - b.set_number)
-        .map((set) => ({
-          setNumber: set.set_number,
-          weight: set.weight,
-          reps: set.reps,
-          completed: set.completed,
-        })),
-    })),
+    exercises: exercises.map((exercise) => {
+      const setRows = requireArray(exercise.completed_workout_sets, "completed_workout_sets", row.id);
+      return {
+        name: exercise.name,
+        targetSets: exercise.target_sets,
+        targetReps: exercise.target_reps,
+        targetRestSeconds: exercise.target_rest_seconds,
+        completed: exercise.completed,
+        note: exercise.note,
+        sets: [...setRows]
+          .sort((a, b) => a.set_number - b.set_number)
+          .map((set) => ({
+            setNumber: set.set_number,
+            weight: set.weight,
+            reps: set.reps,
+            completed: set.completed,
+          })),
+      };
+    }),
     readiness: readinessRow ? toReadiness(readinessRow) : null,
   };
 }

@@ -680,6 +680,117 @@ export interface Database {
         };
         Relationships: [];
       };
+
+      workout_templates: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description: string | null;
+          goal: string;
+          days_per_week: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          description?: string | null;
+          goal: string;
+          days_per_week: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          description?: string | null;
+          goal?: string;
+          days_per_week?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      workout_template_days: {
+        Row: {
+          id: string;
+          user_id: string;
+          template_id: string;
+          day_number: number;
+          day_name: string;
+          focus: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          template_id: string;
+          day_number: number;
+          day_name: string;
+          focus?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          template_id?: string;
+          day_number?: number;
+          day_name?: string;
+          focus?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      workout_template_exercises: {
+        Row: {
+          id: string;
+          user_id: string;
+          template_day_id: string;
+          exercise_name: string;
+          sets: number;
+          reps: string;
+          rest_seconds: number;
+          notes: string;
+          order_index: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          template_day_id: string;
+          exercise_name: string;
+          sets: number;
+          reps: string;
+          rest_seconds: number;
+          notes?: string;
+          order_index: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          template_day_id?: string;
+          exercise_name?: string;
+          sets?: number;
+          reps?: string;
+          rest_seconds?: number;
+          notes?: string;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

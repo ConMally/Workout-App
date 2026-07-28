@@ -7,6 +7,7 @@ import type { ReadinessRepository } from "./readiness-repository";
 import type { ExerciseNoteRepository } from "./exercise-note-repository";
 import type { SettingsRepository } from "./settings-repository";
 import type { SubstitutionRepository } from "./substitution-repository";
+import type { TemplateRepository } from "./template-repository";
 
 // The full set of workout-data repositories the app needs, bundled
 // together so app/page.tsx (and anything else) can pick one bundle for
@@ -23,4 +24,5 @@ export interface Repositories {
   exerciseNotes: ExerciseNoteRepository;
   settings: SettingsRepository;
   substitutions: SubstitutionRepository;
+  templates: TemplateRepository;
 }

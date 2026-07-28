@@ -8,6 +8,7 @@ import { createLocalReadinessRepository } from "./readiness-repository";
 import { createLocalExerciseNoteRepository } from "./exercise-note-repository";
 import { createLocalSettingsRepository } from "./settings-repository";
 import { createLocalSubstitutionRepository } from "./substitution-repository";
+import { createLocalTemplateRepository } from "./template-repository";
 
 // Every local repository is a stateless adapter over lib/storage.ts, so
 // one shared instance is safe to reuse across the whole app.
@@ -21,4 +22,5 @@ export const localRepositories: Repositories = {
   exerciseNotes: createLocalExerciseNoteRepository(),
   settings: createLocalSettingsRepository(),
   substitutions: createLocalSubstitutionRepository(),
+  templates: createLocalTemplateRepository(),
 };

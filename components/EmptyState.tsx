@@ -1,4 +1,12 @@
-export default function EmptyState() {
+interface EmptyStateProps {
+  title?: string;
+  message?: string;
+}
+
+export default function EmptyState({
+  title = "No plan yet",
+  message = "Answer a few quick questions and we'll build your personalized weekly plan.",
+}: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-8 text-center">
       <span
@@ -17,10 +25,8 @@ export default function EmptyState() {
           <path d="M6 12h12M9 8v8M15 8v8" />
         </svg>
       </span>
-      <p className="text-sm font-medium text-slate-600">No plan yet</p>
-      <p className="max-w-xs text-sm text-slate-400">
-        Answer a few quick questions and we&apos;ll build your personalized weekly plan.
-      </p>
+      <p className="text-sm font-medium text-slate-600">{title}</p>
+      <p className="max-w-xs text-sm text-slate-400">{message}</p>
     </div>
   );
 }

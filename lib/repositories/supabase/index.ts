@@ -10,6 +10,7 @@ import { createSupabaseReadinessRepository } from "./readiness-repository";
 import { createSupabaseExerciseNoteRepository } from "./exercise-note-repository";
 import { createSupabaseSettingsRepository } from "./settings-repository";
 import { createSupabaseSubstitutionRepository } from "./substitution-repository";
+import { createSupabaseTemplateRepository } from "./template-repository";
 
 export function createSupabaseRepositories(client: SupabaseClient<Database>): Repositories {
   return {
@@ -22,5 +23,6 @@ export function createSupabaseRepositories(client: SupabaseClient<Database>): Re
     exerciseNotes: createSupabaseExerciseNoteRepository(client),
     settings: createSupabaseSettingsRepository(client),
     substitutions: createSupabaseSubstitutionRepository(client),
+    templates: createSupabaseTemplateRepository(client),
   };
 }

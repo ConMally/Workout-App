@@ -10,6 +10,7 @@ interface WorkoutPlanViewProps {
   onStartOver: () => void;
   onStartWorkout: (dayIndex: number) => void;
   onSwapExercise: (dayIndex: number, exerciseIndex: number) => void;
+  onSaveAsTemplate: () => void;
   hasActiveWorkout: boolean;
 }
 
@@ -20,6 +21,7 @@ export default function WorkoutPlanView({
   onStartOver,
   onStartWorkout,
   onSwapExercise,
+  onSaveAsTemplate,
   hasActiveWorkout,
 }: WorkoutPlanViewProps) {
   return (
@@ -39,6 +41,12 @@ export default function WorkoutPlanView({
             Start Over
           </button>
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={onSaveAsTemplate}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Save as Template
+            </button>
             <button
               onClick={onEditPreferences}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"

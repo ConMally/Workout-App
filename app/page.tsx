@@ -18,6 +18,9 @@ import ExerciseProgressDetail from "@/components/exercises/ExerciseProgressDetai
 import AppHeader from "@/components/layout/AppHeader";
 import LocalDataNotice from "@/components/auth/LocalDataNotice";
 import MigrationBanner from "@/components/migration/MigrationBanner";
+import TemplateList from "@/components/templates/TemplateList";
+import SaveAsTemplateDialog from "@/components/templates/SaveAsTemplateDialog";
+import type { TemplateEditorSubmitInput } from "@/components/templates/TemplateEditor";
 import { useRepositories } from "@/lib/repositories/useRepositories";
 import { getFriendlyDataErrorMessage, isUniqueViolation } from "@/lib/supabase/data-errors";
 import { createClient } from "@/lib/supabase/client";
@@ -25,6 +28,8 @@ import { createSupabaseProfileRepository } from "@/lib/repositories/supabase/pro
 import type { WorkoutPlan } from "@/types/workout";
 import type { Goal } from "@/types/goals";
 import type { DatedPersonalRecord } from "@/types/dashboard";
+import type { TemplateSummary, WorkoutTemplate } from "@/types/templates";
+import { createTemplate as buildTemplate, toTemplateSummary } from "@/lib/templates";
 import {
   DEFAULT_SETTINGS,
   type ActiveWorkout,
@@ -83,6 +88,23 @@ async function fetchWeeklyTarget(userId: string): Promise<number | null> {
   return profile?.weeklyTrainingTarget ?? null;
 }
 
+// Tags a repository call with the domain it belongs to so a failure in the
+// main load effect's Promise.all names the exact operation that broke
+// instead of surfacing only the generic "couldn't load your data" message —
+// every one of these calls maps a raw Supabase/PostgREST response into app
+// types, so a shape mismatch throws here, not at the network layer, and
+// would otherwise be indistinguishable from every other domain's failure.
+async function loadDomain<T>(domain: string, promise: Promise<T>): Promise<T> {
+  try {
+    return await promise;
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error(`[data-load] ${domain} failed:`, error);
+    }
+    throw error;
+  }
+}
+
 export default function Home() {
   const reposState = useRepositories();
 
@@ -105,6 +127,10 @@ export default function Home() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [weeklyTarget, setWeeklyTarget] = useState<number | null>(null);
+  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [saveTemplateError, setSaveTemplateError] = useState<string | null>(null);
 
   // Only honor a "?tab=" link from elsewhere in the app (e.g. the nav bar on
   // /account) on the very first load — re-applying it on every account
@@ -136,16 +162,25 @@ export default function Home() {
 
     async function load() {
       try {
-        const [savedPlan, savedActiveWorkout, historyResult, loadedSettings, loadedGoals, loadedSubstitutions, loadedWeeklyTarget] =
-          await Promise.all([
-            repositories.plan.getActivePlan(userId),
-            repositories.activeWorkout.getActiveWorkout(userId),
-            repositories.history.listHistory(userId, { limit: MAX_HISTORY_FOR_STATS }),
-            repositories.settings.getSettings(userId),
-            repositories.goals.listGoals(userId),
-            repositories.substitutions.getSubstitutionHistory(userId),
-            weeklyTargetPromise,
-          ]);
+        const [
+          savedPlan,
+          savedActiveWorkout,
+          historyResult,
+          loadedSettings,
+          loadedGoals,
+          loadedSubstitutions,
+          loadedWeeklyTarget,
+          loadedTemplates,
+        ] = await Promise.all([
+          loadDomain("plan", repositories.plan.getActivePlan(userId)),
+          loadDomain("activeWorkout", repositories.activeWorkout.getActiveWorkout(userId)),
+          loadDomain("history", repositories.history.listHistory(userId, { limit: MAX_HISTORY_FOR_STATS })),
+          loadDomain("settings", repositories.settings.getSettings(userId)),
+          loadDomain("goals", repositories.goals.listGoals(userId)),
+          loadDomain("substitutions", repositories.substitutions.getSubstitutionHistory(userId)),
+          loadDomain("weeklyTarget", weeklyTargetPromise),
+          loadDomain("templates", repositories.templates.getTemplates(userId)),
+        ]);
 
         if (cancelled) return;
 
@@ -166,6 +201,7 @@ export default function Home() {
         setGoals(loadedGoals);
         setSubstitutionHistory(loadedSubstitutions);
         setWeeklyTarget(loadedWeeklyTarget);
+        setTemplates(loadedTemplates);
         setSelectedHistoryId(null);
         setSelectedExercise(null);
         setRecentPRs([]);
@@ -175,7 +211,7 @@ export default function Home() {
         if (!hasAppliedTabParam.current) {
           hasAppliedTabParam.current = true;
           const tabParam = new URLSearchParams(window.location.search).get("tab");
-          const linkableTabs: Tab[] = ["dashboard", "plan", "history", "insights", "settings"];
+          const linkableTabs: Tab[] = ["dashboard", "plan", "history", "insights", "templates", "settings"];
           if (tabParam && (linkableTabs as string[]).includes(tabParam)) {
             nextTab = tabParam as Tab;
           } else if (tabParam === "workout" && savedActiveWorkout) {
@@ -490,6 +526,114 @@ export default function Home() {
     runMutation(() => repositories.goals.deleteGoal(userId, id));
   }
 
+  // Template handlers are awaited (not fire-and-forget like the settings/
+  // goal handlers above) and let errors propagate — TemplateList owns its
+  // own try/catch and inline error display for these, since template
+  // create/edit is a deliberate guided flow that needs feedback tied
+  // directly to the action, not just the page's global saveError banner.
+  async function handleCreateTemplate(input: TemplateEditorSubmitInput) {
+    if (reposState.status !== "ready") return;
+    const { repositories, mode } = reposState;
+    const userId = mode === "cloud" ? reposState.userId : "local";
+
+    const template = buildTemplate(input);
+    await repositories.templates.createTemplate(userId, template);
+    setTemplates((prev) => [toTemplateSummary(template), ...prev]);
+  }
+
+  async function handleUpdateTemplate(template: WorkoutTemplate) {
+    if (reposState.status !== "ready") return;
+    const { repositories, mode } = reposState;
+    const userId = mode === "cloud" ? reposState.userId : "local";
+
+    await repositories.templates.updateTemplate(userId, template);
+    setTemplates((prev) => prev.map((t) => (t.id === template.id ? toTemplateSummary(template) : t)));
+  }
+
+  async function handleDeleteTemplate(templateId: string) {
+    if (reposState.status !== "ready") return;
+    const { repositories, mode } = reposState;
+    const userId = mode === "cloud" ? reposState.userId : "local";
+
+    await repositories.templates.deleteTemplate(userId, templateId);
+    setTemplates((prev) => prev.filter((t) => t.id !== templateId));
+  }
+
+  async function handleDuplicateTemplate(templateId: string, newName: string) {
+    if (reposState.status !== "ready") return;
+    const { repositories, mode } = reposState;
+    const userId = mode === "cloud" ? reposState.userId : "local";
+
+    const copy = await repositories.templates.duplicateTemplate(userId, templateId, newName);
+    setTemplates((prev) => [toTemplateSummary(copy), ...prev]);
+  }
+
+  async function handleLoadTemplate(templateId: string): Promise<WorkoutTemplate | null> {
+    if (reposState.status !== "ready") return null;
+    const { repositories, mode } = reposState;
+    const userId = mode === "cloud" ? reposState.userId : "local";
+    return repositories.templates.getTemplate(userId, templateId);
+  }
+
+  // Generates a plan from the template and sets it as the active plan —
+  // the same PlanRepository#saveActivePlan call generatePlan already uses,
+  // so this composes with the existing plan flow rather than a parallel path.
+  async function handleUseTemplate(templateId: string) {
+    if (reposState.status !== "ready") return;
+    const { repositories, mode } = reposState;
+    const userId = mode === "cloud" ? reposState.userId : "local";
+
+    const summary = templates.find((t) => t.id === templateId);
+    const plan = await repositories.templates.createWorkoutFromTemplate(userId, templateId);
+    const preferences: OnboardingFormValues = {
+      goal: summary?.goal ?? "general_fitness",
+      experienceLevel: "intermediate",
+      daysPerWeek: plan.weeklySchedule.length,
+      equipment: ["full_gym"],
+      sessionDurationMinutes: plan.summary.sessionDurationMinutes,
+      injuriesOrLimitations: "",
+      exercisePreferences: "",
+    };
+
+    await repositories.plan.saveActivePlan(userId, { preferences, plan, savedAt: new Date().toISOString() });
+
+    setFormValues(preferences);
+    setView({ status: "plan", plan });
+    setHasGeneratedBefore(true);
+    setSubstitutionHistory({});
+    runMutation(() => repositories.substitutions.clearSubstitutionHistory(userId));
+    setActiveTab("plan");
+  }
+
+  function handleOpenSaveAsTemplate() {
+    setSaveTemplateError(null);
+    setShowSaveAsTemplate(true);
+  }
+
+  async function handleSaveAsTemplate(name: string, description: string | null) {
+    if (view.status !== "plan" || reposState.status !== "ready") return;
+    const { repositories, mode } = reposState;
+    const userId = mode === "cloud" ? reposState.userId : "local";
+
+    setSavingTemplate(true);
+    setSaveTemplateError(null);
+    try {
+      const template = await repositories.templates.saveGeneratedWorkoutAsTemplate(
+        userId,
+        view.plan,
+        formValues.goal,
+        name,
+        description
+      );
+      setTemplates((prev) => [toTemplateSummary(template), ...prev]);
+      setShowSaveAsTemplate(false);
+    } catch (error) {
+      setSaveTemplateError(getFriendlyDataErrorMessage(error));
+    } finally {
+      setSavingTemplate(false);
+    }
+  }
+
   // Backup export/import only ever operates on localStorage — there is no
   // cloud equivalent this phase (see lib/repositories/supabase/index.ts;
   // no repository exposes a bulk export). SettingsPanel only renders these
@@ -654,6 +798,7 @@ export default function Home() {
                   onStartOver={handleStartOver}
                   onStartWorkout={handleStartWorkout}
                   onSwapExercise={handleSwapExercise}
+                  onSaveAsTemplate={handleOpenSaveAsTemplate}
                   hasActiveWorkout={activeWorkout !== null}
                 />
               )}
@@ -703,6 +848,27 @@ export default function Home() {
               onCreateGoal={handleCreateGoal}
               onUpdateGoal={handleUpdateGoal}
               onDeleteGoal={handleDeleteGoal}
+            />
+          )}
+
+          {activeTab === "templates" && (
+            <TemplateList
+              templates={templates}
+              onCreate={handleCreateTemplate}
+              onUpdate={handleUpdateTemplate}
+              onDelete={handleDeleteTemplate}
+              onDuplicate={handleDuplicateTemplate}
+              onLoadTemplate={handleLoadTemplate}
+              onUseTemplate={handleUseTemplate}
+            />
+          )}
+
+          {showSaveAsTemplate && (
+            <SaveAsTemplateDialog
+              saving={savingTemplate}
+              errorMessage={saveTemplateError}
+              onSave={handleSaveAsTemplate}
+              onCancel={() => setShowSaveAsTemplate(false)}
             />
           )}
 
