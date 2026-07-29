@@ -20,6 +20,7 @@ import AppHeader from "@/components/layout/AppHeader";
 import MigrationBanner from "@/components/migration/MigrationBanner";
 import TemplateList from "@/components/templates/TemplateList";
 import SaveAsTemplateDialog from "@/components/templates/SaveAsTemplateDialog";
+import UnsavedChangesDialog from "@/components/templates/UnsavedChangesDialog";
 import type { TemplateEditorSubmitInput } from "@/components/templates/TemplateEditor";
 import { useRepositories } from "@/lib/repositories/useRepositories";
 import { getFriendlyDataErrorMessage, isUniqueViolation } from "@/lib/supabase/data-errors";
@@ -122,6 +123,14 @@ export default function Home() {
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [saveTemplateError, setSaveTemplateError] = useState<string | null>(null);
+  const [templateUseSuccess, setTemplateUseSuccess] = useState<string | null>(null);
+  // Tracks whether the Templates tab's create/edit form has unsaved
+  // changes, so switching to a different tab mid-edit can warn first —
+  // TemplateEditor's own Cancel button and the beforeunload fallback
+  // handle the other two "leave a dirty editor" cases on their own (see
+  // components/templates/TemplateEditor.tsx).
+  const [templatesEditorDirty, setTemplatesEditorDirty] = useState(false);
+  const [pendingTabSwitch, setPendingTabSwitch] = useState<Tab | null>(null);
 
   // Only honor a "?tab=" link from elsewhere in the app (e.g. the nav bar on
   // /account) on the very first load — re-applying it on every account
@@ -527,6 +536,22 @@ export default function Home() {
     setTemplates((prev) => prev.map((t) => (t.id === template.id ? toTemplateSummary(template) : t)));
   }
 
+  // Optimistic: flips the star immediately, then rolls back to the prior
+  // value if the write fails — TemplateList surfaces the thrown error
+  // itself, this only needs to undo the local state it changed.
+  async function handleToggleFavorite(templateId: string, isFavorite: boolean) {
+    if (reposState.status !== "ready") return;
+    const { repositories, userId } = reposState;
+
+    setTemplates((prev) => prev.map((t) => (t.id === templateId ? { ...t, isFavorite } : t)));
+    try {
+      await repositories.templates.toggleFavorite(userId, templateId, isFavorite);
+    } catch (error) {
+      setTemplates((prev) => prev.map((t) => (t.id === templateId ? { ...t, isFavorite: !isFavorite } : t)));
+      throw error;
+    }
+  }
+
   async function handleDeleteTemplate(templateId: string) {
     if (reposState.status !== "ready") return;
     const { repositories, userId } = reposState;
@@ -551,7 +576,10 @@ export default function Home() {
 
   // Generates a plan from the template and sets it as the active plan —
   // the same PlanRepository#saveActivePlan call generatePlan already uses,
-  // so this composes with the existing plan flow rather than a parallel path.
+  // so this composes with the existing plan flow rather than a parallel
+  // path. TemplateList has already confirmed the destructive-replace
+  // warning (if one was needed) before this ever runs — see
+  // TemplateList.tsx#handleUseClick.
   async function handleUseTemplate(templateId: string) {
     if (reposState.status !== "ready") return;
     const { repositories, userId } = reposState;
@@ -576,6 +604,7 @@ export default function Home() {
     setSubstitutionHistory({});
     runMutation(() => repositories.substitutions.clearSubstitutionHistory(userId));
     setActiveTab("plan");
+    setTemplateUseSuccess(summary ? `Started "${summary.name}".` : "Plan started from template.");
   }
 
   function handleOpenSaveAsTemplate() {
@@ -641,9 +670,23 @@ export default function Home() {
 
   const currentPlan = view.status === "plan" ? view.plan : null;
 
+  // Switching away from a dirty Templates editor without saving loses
+  // whatever's currently unsaved — same warning TemplateEditor's own
+  // Cancel button shows, triggered here because a tab click bypasses that
+  // button entirely (see components/templates/TemplateEditor.tsx's
+  // onDirtyChange callback, threaded through TemplateList).
+  function handleTabChange(nextTab: Tab) {
+    if (activeTab === "templates" && templatesEditorDirty && nextTab !== "templates") {
+      setPendingTabSwitch(nextTab);
+      return;
+    }
+    if (nextTab !== "plan") setTemplateUseSuccess(null);
+    setActiveTab(nextTab);
+  }
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
-      <AppHeader activeTab={activeTab} onTabChange={setActiveTab} hasActiveWorkout={activeWorkout !== null} variant="app" />
+      <AppHeader activeTab={activeTab} onTabChange={handleTabChange} hasActiveWorkout={activeWorkout !== null} variant="app" />
 
       <Disclaimer />
       <MigrationBanner />
@@ -654,6 +697,19 @@ export default function Home() {
           <button
             onClick={() => setSaveError(null)}
             className="shrink-0 rounded-md px-1.5 py-0.5 text-red-600 transition hover:bg-red-100"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {activeTab === "plan" && templateUseSuccess && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+          <p>{templateUseSuccess}</p>
+          <button
+            onClick={() => setTemplateUseSuccess(null)}
+            className="shrink-0 rounded-md px-1.5 py-0.5 text-teal-700 transition hover:bg-teal-100"
             aria-label="Dismiss"
           >
             ✕
@@ -784,12 +840,15 @@ export default function Home() {
           {activeTab === "templates" && (
             <TemplateList
               templates={templates}
+              hasActivePlan={hasGeneratedBefore}
               onCreate={handleCreateTemplate}
               onUpdate={handleUpdateTemplate}
               onDelete={handleDeleteTemplate}
               onDuplicate={handleDuplicateTemplate}
               onLoadTemplate={handleLoadTemplate}
               onUseTemplate={handleUseTemplate}
+              onToggleFavorite={handleToggleFavorite}
+              onDirtyChange={setTemplatesEditorDirty}
             />
           )}
 
@@ -799,6 +858,17 @@ export default function Home() {
               errorMessage={saveTemplateError}
               onSave={handleSaveAsTemplate}
               onCancel={() => setShowSaveAsTemplate(false)}
+            />
+          )}
+
+          {pendingTabSwitch && (
+            <UnsavedChangesDialog
+              onDiscard={() => {
+                setTemplatesEditorDirty(false);
+                setActiveTab(pendingTabSwitch);
+                setPendingTabSwitch(null);
+              }}
+              onKeepEditing={() => setPendingTabSwitch(null)}
             />
           )}
 

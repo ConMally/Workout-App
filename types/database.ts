@@ -689,6 +689,7 @@ export interface Database {
           description: string | null;
           goal: string;
           days_per_week: number;
+          is_favorite: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -699,6 +700,7 @@ export interface Database {
           description?: string | null;
           goal: string;
           days_per_week: number;
+          is_favorite?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -709,6 +711,7 @@ export interface Database {
           description?: string | null;
           goal?: string;
           days_per_week?: number;
+          is_favorite?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -793,7 +796,47 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    // supabase/migrations/0007_template_favorites.sql — atomic multi-table
+    // template writes (create/replace/duplicate the full day/exercise tree
+    // in one transaction) and order-only reorders. Every jsonb `days`
+    // argument matches TemplateDayInput[] (see
+    // lib/repositories/supabase/template-repository.ts).
+    Functions: {
+      create_template_tree: {
+        Args: {
+          p_id: string;
+          p_name: string;
+          p_description: string | null;
+          p_goal: string;
+          p_days_per_week: number;
+          p_days: Json;
+        };
+        Returns: string;
+      };
+      replace_template_tree: {
+        Args: {
+          p_template_id: string;
+          p_name: string;
+          p_description: string | null;
+          p_goal: string;
+          p_days_per_week: number;
+          p_days: Json;
+        };
+        Returns: undefined;
+      };
+      duplicate_template_tree: {
+        Args: { p_source_template_id: string; p_new_name: string };
+        Returns: string;
+      };
+      reorder_template_days: {
+        Args: { p_template_id: string; p_day_ids: string[] };
+        Returns: undefined;
+      };
+      reorder_template_exercises: {
+        Args: { p_template_day_id: string; p_exercise_ids: string[] };
+        Returns: undefined;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

@@ -99,7 +99,7 @@ export function createSupabaseActiveWorkoutRepository(client: SupabaseClient<Dat
         .maybeSingle();
 
       if (error) throw error;
-      return data ? toActiveWorkout(data as WorkoutRowWithChildren) : null;
+      return data ? toActiveWorkout(data as unknown as WorkoutRowWithChildren) : null;
     },
 
     // The unique (user_id) constraint on active_workouts means only one row

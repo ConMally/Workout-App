@@ -160,7 +160,7 @@ export function createSupabaseHistoryRepository(client: SupabaseClient<Database>
 
       if (error) throw error;
 
-      const rows = data as WorkoutRowWithChildren[];
+      const rows = data as unknown as WorkoutRowWithChildren[];
       const hasMore = rows.length > limit;
       return {
         items: rows.slice(0, limit).map(toCompletedWorkout),
@@ -177,7 +177,7 @@ export function createSupabaseHistoryRepository(client: SupabaseClient<Database>
         .maybeSingle();
 
       if (error) throw error;
-      return data ? toCompletedWorkout(data as WorkoutRowWithChildren) : null;
+      return data ? toCompletedWorkout(data as unknown as WorkoutRowWithChildren) : null;
     },
 
     async addCompletedWorkout(userId: string, workout: CompletedWorkout): Promise<void> {

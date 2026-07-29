@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface SaveAsTemplateDialogProps {
   saving: boolean;
@@ -13,6 +14,8 @@ export default function SaveAsTemplateDialog({ saving, errorMessage, onSave, onC
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLFormElement>(null);
+  useFocusTrap(dialogRef, true);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +31,7 @@ export default function SaveAsTemplateDialog({ saving, errorMessage, onSave, onC
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4" role="presentation" onClick={onCancel}>
       <form
+        ref={dialogRef}
         onSubmit={handleSubmit}
         role="dialog"
         aria-modal="true"

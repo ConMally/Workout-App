@@ -1,21 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { TemplateSummary, WorkoutTemplate } from "@/types/templates";
+import {
+  filterTemplates,
+  nextDuplicateName,
+  searchTemplates,
+  sortTemplates,
+  type TemplateFilter,
+  type TemplateSortMode,
+} from "@/lib/templates";
 import { getFriendlyDataErrorMessage } from "@/lib/supabase/data-errors";
 import EmptyState from "@/components/EmptyState";
 import TemplateCard from "./TemplateCard";
+import TemplateToolbar from "./TemplateToolbar";
 import TemplateEditor, { type TemplateEditorSubmitInput } from "./TemplateEditor";
 import DeleteTemplateDialog from "./DeleteTemplateDialog";
+import UseTemplateDialog from "./UseTemplateDialog";
 
 interface TemplateListProps {
   templates: TemplateSummary[];
+  hasActivePlan: boolean;
   onCreate: (input: TemplateEditorSubmitInput) => Promise<void>;
   onUpdate: (template: WorkoutTemplate) => Promise<void>;
   onDelete: (templateId: string) => Promise<void>;
   onDuplicate: (templateId: string, newName: string) => Promise<void>;
   onLoadTemplate: (templateId: string) => Promise<WorkoutTemplate | null>;
   onUseTemplate: (templateId: string) => Promise<void>;
+  onToggleFavorite: (templateId: string, isFavorite: boolean) => Promise<void>;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 type View = { mode: "list" } | { mode: "create" } | { mode: "edit"; template: WorkoutTemplate };
@@ -28,33 +41,40 @@ function nameCollides(templates: TemplateSummary[], name: string, excludeId?: st
   return templates.some((t) => t.id !== excludeId && t.name.trim().toLowerCase() === normalized);
 }
 
-function suggestDuplicateName(baseName: string, templates: TemplateSummary[]): string {
-  let candidate = `${baseName} (copy)`;
-  let n = 2;
-  while (nameCollides(templates, candidate)) {
-    candidate = `${baseName} (copy ${n})`;
-    n += 1;
-  }
-  return candidate;
-}
-
 export default function TemplateList({
   templates,
+  hasActivePlan,
   onCreate,
   onUpdate,
   onDelete,
   onDuplicate,
   onLoadTemplate,
   onUseTemplate,
+  onToggleFavorite,
+  onDirtyChange,
 }: TemplateListProps) {
   const [view, setView] = useState<View>({ mode: "list" });
   const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<TemplateSummary | null>(null);
+  const [pendingUse, setPendingUse] = useState<TemplateSummary | null>(null);
   const [busyTemplateId, setBusyTemplateId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
+  const [useError, setUseError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
+
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<TemplateFilter>("all");
+  const [sort, setSort] = useState<TemplateSortMode>("favorites_first");
+
+  // All three run over the already-loaded `templates` list — no network
+  // call on any keystroke or toggle (see lib/templates.ts).
+  const visibleTemplates = useMemo(
+    () => sortTemplates(filterTemplates(searchTemplates(templates, query), filter), sort),
+    [templates, query, filter, sort]
+  );
 
   async function handleEditClick(summary: TemplateSummary) {
     setListError(null);
@@ -85,12 +105,19 @@ export default function TemplateList({
       } else {
         await onCreate(input);
       }
+      onDirtyChange?.(false);
       setView({ mode: "list" });
     } catch (error) {
       setFormError(getFriendlyDataErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleEditorCancel() {
+    onDirtyChange?.(false);
+    setFormError(null);
+    setView({ mode: "list" });
   }
 
   async function handleConfirmDelete() {
@@ -110,7 +137,8 @@ export default function TemplateList({
     setListError(null);
     setBusyTemplateId(summary.id);
     try {
-      await onDuplicate(summary.id, suggestDuplicateName(summary.name, templates));
+      const existingNames = templates.filter((t) => t.id !== summary.id).map((t) => t.name);
+      await onDuplicate(summary.id, nextDuplicateName(summary.name, existingNames));
     } catch (error) {
       setListError(getFriendlyDataErrorMessage(error));
     } finally {
@@ -118,15 +146,54 @@ export default function TemplateList({
     }
   }
 
-  async function handleUse(summary: TemplateSummary) {
+  // Only warns when starting this template would actually replace
+  // something — a brand-new account with no active plan yet just starts it
+  // immediately, matching "require confirmation when replacement is
+  // destructive" (not when it isn't).
+  function handleUseClick(summary: TemplateSummary) {
+    if (hasActivePlan) {
+      setUseError(null);
+      setPendingUse(summary);
+      return;
+    }
+    void applyTemplate(summary);
+  }
+
+  async function applyTemplate(summary: TemplateSummary) {
     setListError(null);
     setBusyTemplateId(summary.id);
     try {
       await onUseTemplate(summary.id);
+      setPendingUse(null);
     } catch (error) {
-      setListError(getFriendlyDataErrorMessage(error));
+      const message = getFriendlyDataErrorMessage(error);
+      if (pendingUse) setUseError(message);
+      else setListError(message);
     } finally {
       setBusyTemplateId(null);
+    }
+  }
+
+  async function handleConfirmUse() {
+    if (!pendingUse) return;
+    setApplyingTemplate(true);
+    try {
+      await applyTemplate(pendingUse);
+    } finally {
+      setApplyingTemplate(false);
+    }
+  }
+
+  // Optimistic — flips the star immediately, rolls back only the local
+  // view if the write fails (the actual template list state lives in
+  // app/page.tsx, which onToggleFavorite already updates on success; on
+  // failure it's simply never updated, so nothing to undo here beyond
+  // surfacing the error).
+  async function handleToggleFavorite(summary: TemplateSummary) {
+    try {
+      await onToggleFavorite(summary.id, !summary.isFavorite);
+    } catch (error) {
+      setListError(getFriendlyDataErrorMessage(error));
     }
   }
 
@@ -142,12 +209,10 @@ export default function TemplateList({
         <TemplateEditor
           initialTemplate={view.mode === "edit" ? view.template : null}
           onSubmit={handleSubmit}
-          onCancel={() => {
-            setFormError(null);
-            setView({ mode: "list" });
-          }}
+          onCancel={handleEditorCancel}
           submitting={submitting}
           errorMessage={formError}
+          onDirtyChange={onDirtyChange}
         />
       </div>
     );
@@ -169,6 +234,17 @@ export default function TemplateList({
         </button>
       </div>
 
+      {templates.length > 0 && (
+        <TemplateToolbar
+          query={query}
+          onQueryChange={setQuery}
+          filter={filter}
+          onFilterChange={setFilter}
+          sort={sort}
+          onSortChange={setSort}
+        />
+      )}
+
       {listError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{listError}</p>}
 
       {templates.length === 0 ? (
@@ -176,9 +252,14 @@ export default function TemplateList({
           title="No templates yet"
           message="Create one from scratch, or generate a plan and save it as a template to reuse later."
         />
+      ) : visibleTemplates.length === 0 ? (
+        <EmptyState
+          title="No templates match"
+          message="Try a different search term, or switch back to All."
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {templates.map((template) => (
+          {visibleTemplates.map((template) => (
             <TemplateCard
               key={template.id}
               template={template}
@@ -186,7 +267,8 @@ export default function TemplateList({
               onEdit={() => handleEditClick(template)}
               onDuplicate={() => handleDuplicate(template)}
               onDelete={() => setPendingDelete(template)}
-              onUse={() => handleUse(template)}
+              onUse={() => handleUseClick(template)}
+              onToggleFavorite={() => handleToggleFavorite(template)}
             />
           ))}
         </div>
@@ -199,6 +281,19 @@ export default function TemplateList({
           errorMessage={null}
           onConfirm={handleConfirmDelete}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {pendingUse && (
+        <UseTemplateDialog
+          templateName={pendingUse.name}
+          applying={applyingTemplate}
+          errorMessage={useError}
+          onConfirm={handleConfirmUse}
+          onCancel={() => {
+            setPendingUse(null);
+            setUseError(null);
+          }}
         />
       )}
     </div>

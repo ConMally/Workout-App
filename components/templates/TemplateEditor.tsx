@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GoalEnum } from "@/lib/schemas";
 import { GOAL_LABELS } from "@/lib/workout-generator";
-import { createEmptyTemplateDay } from "@/lib/templates";
+import { createEmptyTemplateDay, moveItem, validateTemplateInput } from "@/lib/templates";
 import type { TemplateDay, WorkoutTemplate } from "@/types/templates";
 import TemplateDayEditor from "./TemplateDayEditor";
+import UnsavedChangesDialog from "./UnsavedChangesDialog";
 
 export interface TemplateEditorSubmitInput {
   name: string;
@@ -20,14 +21,57 @@ interface TemplateEditorProps {
   onCancel: () => void;
   submitting: boolean;
   errorMessage: string | null;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-export default function TemplateEditor({ initialTemplate, onSubmit, onCancel, submitting, errorMessage }: TemplateEditorProps) {
+function initialDaysFor(template: WorkoutTemplate | null | undefined): TemplateDay[] {
+  return template?.days ?? [createEmptyTemplateDay(0)];
+}
+
+export default function TemplateEditor({
+  initialTemplate,
+  onSubmit,
+  onCancel,
+  submitting,
+  errorMessage,
+  onDirtyChange,
+}: TemplateEditorProps) {
   const [name, setName] = useState(initialTemplate?.name ?? "");
   const [description, setDescription] = useState(initialTemplate?.description ?? "");
   const [goal, setGoal] = useState<WorkoutTemplate["goal"]>(initialTemplate?.goal ?? "general_fitness");
-  const [days, setDays] = useState<TemplateDay[]>(initialTemplate?.days ?? [createEmptyTemplateDay(0)]);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [days, setDays] = useState<TemplateDay[]>(initialDaysFor(initialTemplate));
+  const [issues, setIssues] = useState<Record<string, string>>({});
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
+  const isDirty = useMemo(() => {
+    const initialName = initialTemplate?.name ?? "";
+    const initialDescription = initialTemplate?.description ?? "";
+    const initialGoal = initialTemplate?.goal ?? "general_fitness";
+    return (
+      name !== initialName ||
+      description !== initialDescription ||
+      goal !== initialGoal ||
+      JSON.stringify(days) !== JSON.stringify(initialDaysFor(initialTemplate))
+    );
+  }, [name, description, goal, days, initialTemplate]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  // Fallback for browser refresh/tab close only — every in-app navigation
+  // (Cancel, switching templates, leaving the tab) goes through
+  // handleCancelClick's own confirmation dialog instead, since a native
+  // `confirm()`-style prompt can't be styled or tested the same way and
+  // beforeunload can't intercept an in-app route change at all.
+  useEffect(() => {
+    if (!isDirty) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
 
   function updateDay(index: number, day: TemplateDay) {
     setDays(days.map((d, i) => (i === index ? day : d)));
@@ -41,19 +85,28 @@ export default function TemplateEditor({ initialTemplate, onSubmit, onCancel, su
     setDays(days.filter((_, i) => i !== index).map((day, i) => ({ ...day, dayNumber: i })));
   }
 
+  function moveDay(index: number, direction: "up" | "down") {
+    setDays(moveItem(days, index, direction).map((day, i) => ({ ...day, dayNumber: i })));
+  }
+
+  function handleCancelClick() {
+    if (isDirty) {
+      setShowUnsavedDialog(true);
+      return;
+    }
+    onCancel();
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setValidationError(null);
 
     const trimmedName = name.trim();
-    if (!trimmedName) {
-      setValidationError("Give this template a name.");
+    const foundIssues = validateTemplateInput({ name: trimmedName, days });
+    if (foundIssues.length > 0) {
+      setIssues(Object.fromEntries(foundIssues.map((issue) => [issue.path, issue.message])));
       return;
     }
-    if (days.some((day) => day.exercises.some((exercise) => !exercise.name.trim()))) {
-      setValidationError("Every exercise needs a name — remove any empty rows.");
-      return;
-    }
+    setIssues({});
 
     onSubmit({
       name: trimmedName,
@@ -62,6 +115,10 @@ export default function TemplateEditor({ initialTemplate, onSubmit, onCancel, su
       days: days.map((day, i) => ({ ...day, dayNumber: i })),
     });
   }
+
+  const nameIssue = issues.name;
+  const daysIssue = issues.days;
+  const topLevelIssueCount = Object.keys(issues).length;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -75,8 +132,19 @@ export default function TemplateEditor({ initialTemplate, onSubmit, onCancel, su
               onChange={(e) => setName(e.target.value)}
               maxLength={120}
               placeholder="e.g. Upper/Lower Split"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              aria-invalid={Boolean(nameIssue)}
+              aria-describedby={nameIssue ? "template-name-error" : undefined}
+              className={`rounded-lg border px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 ${
+                nameIssue
+                  ? "border-red-300 focus:border-red-400 focus:ring-red-500/30"
+                  : "border-slate-200 focus:border-teal-500 focus:ring-teal-500/30"
+              }`}
             />
+            {nameIssue && (
+              <p id="template-name-error" className="text-xs text-red-600">
+                {nameIssue}
+              </p>
+            )}
           </label>
 
           <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
@@ -107,13 +175,19 @@ export default function TemplateEditor({ initialTemplate, onSubmit, onCancel, su
         </label>
       </div>
 
+      {daysIssue && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{daysIssue}</p>}
+
       <div className="flex flex-col gap-3">
         {days.map((day, index) => (
           <TemplateDayEditor
-            key={index}
+            key={day.id ?? index}
             day={day}
+            index={index}
+            count={days.length}
+            errors={issues}
             onChange={(next) => updateDay(index, next)}
             onRemove={() => removeDay(index)}
+            onMove={(direction) => moveDay(index, direction)}
             removeDisabled={days.length <= 1}
           />
         ))}
@@ -128,14 +202,17 @@ export default function TemplateEditor({ initialTemplate, onSubmit, onCancel, su
         + Add day
       </button>
 
-      {(validationError || errorMessage) && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{validationError ?? errorMessage}</p>
+      {topLevelIssueCount > 0 && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          Fix the {topLevelIssueCount === 1 ? "issue" : `${topLevelIssueCount} issues`} highlighted above before saving.
+        </p>
       )}
+      {errorMessage && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>}
 
       <div className="flex flex-wrap justify-end gap-2">
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancelClick}
           disabled={submitting}
           className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -149,6 +226,16 @@ export default function TemplateEditor({ initialTemplate, onSubmit, onCancel, su
           {submitting ? "Saving…" : initialTemplate ? "Save changes" : "Create template"}
         </button>
       </div>
+
+      {showUnsavedDialog && (
+        <UnsavedChangesDialog
+          onDiscard={() => {
+            setShowUnsavedDialog(false);
+            onCancel();
+          }}
+          onKeepEditing={() => setShowUnsavedDialog(false)}
+        />
+      )}
     </form>
   );
 }

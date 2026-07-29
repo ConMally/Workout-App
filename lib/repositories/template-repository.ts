@@ -29,4 +29,11 @@ export interface TemplateRepository {
     description: string | null
   ): Promise<WorkoutTemplate>;
   createWorkoutFromTemplate(userId: string, templateId: string): Promise<WorkoutPlan>;
+  toggleFavorite(userId: string, templateId: string, isFavorite: boolean): Promise<void>;
+  // dayIds/exerciseIds must be every id currently belonging to the
+  // template/day, in the desired final order — a partial list is rejected
+  // rather than silently reordering a subset (see
+  // supabase/migrations/0007_template_favorites.sql's row-count check).
+  reorderTemplateDays(userId: string, templateId: string, dayIds: string[]): Promise<void>;
+  reorderTemplateExercises(userId: string, templateDayId: string, exerciseIds: string[]): Promise<void>;
 }

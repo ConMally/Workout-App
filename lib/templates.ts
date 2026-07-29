@@ -1,5 +1,5 @@
-import type { WorkoutPlan } from "@/types/workout";
 import type { TemplateDay, TemplateExercise, TemplateSummary, WorkoutTemplate } from "@/types/templates";
+import type { WorkoutPlan } from "@/types/workout";
 import { GOAL_LABELS } from "./workout-generator";
 
 // Pure helpers for constructing and converting templates — mirrors
@@ -7,12 +7,26 @@ import { GOAL_LABELS } from "./workout-generator";
 // never inline in a component) and lib/workout-generator.ts's exported
 // GOAL_LABELS (reused for display, never redefined).
 
+// Swaps the item at `index` with its neighbor — the shared move-up/
+// move-down primitive behind every reorder control (days in TemplateEditor,
+// exercises in TemplateDayEditor). A no-op at either end of the array
+// rather than wrapping, matching how "Move up"/"Move down" buttons
+// naturally disable at the boundary.
+export function moveItem<T>(items: T[], index: number, direction: "up" | "down"): T[] {
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= items.length) return items;
+  const next = [...items];
+  [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+  return next;
+}
+
 export function createEmptyTemplateExercise(): TemplateExercise {
-  return { name: "", sets: 3, reps: "8-12", restSeconds: 90, notes: "" };
+  return { id: crypto.randomUUID(), name: "", sets: 3, reps: "8-12", restSeconds: 90, notes: "" };
 }
 
 export function createEmptyTemplateDay(dayNumber: number): TemplateDay {
   return {
+    id: crypto.randomUUID(),
     dayNumber,
     dayName: `Day ${dayNumber + 1}`,
     focus: "",
@@ -34,14 +48,53 @@ export function createTemplate(input: {
     goal: input.goal,
     daysPerWeek: input.days.length,
     days: input.days,
+    isFavorite: false,
     createdAt: now,
     updatedAt: now,
   };
 }
 
+// Deep-copies days/exercises with fresh ids rather than sharing references
+// with the source template, so nothing about the copy can ever alias back
+// into (and risk mutating) the original — matters most for the local
+// repository, which keeps every template as a plain object in localStorage;
+// the Supabase repository instead duplicates entirely server-side via the
+// duplicate_template_tree RPC and only uses this for its return value's
+// shape, not to build the actual rows written to the database.
+// A duplicate never inherits isFavorite — starting unfavorited matches the
+// "it's a new item" expectation and avoids double-counting a preferred
+// template that also has favorited copies floating around.
 export function duplicateTemplateData(template: WorkoutTemplate, newName: string): WorkoutTemplate {
   const now = new Date().toISOString();
-  return { ...template, id: crypto.randomUUID(), name: newName, createdAt: now, updatedAt: now };
+  return {
+    ...template,
+    id: crypto.randomUUID(),
+    name: newName,
+    isFavorite: false,
+    days: template.days.map((day) => ({
+      ...day,
+      id: crypto.randomUUID(),
+      exercises: day.exercises.map((exercise) => ({ ...exercise, id: crypto.randomUUID() })),
+    })),
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+// "<Original Name> Copy", then "<Original Name> Copy 2", "Copy 3", etc. —
+// checked case-insensitively against every existing template name so the
+// suggested name is never a silent collision. `existingNames` should
+// include every template's current name except the source template itself
+// (duplicating never needs to avoid colliding with the thing it's copying).
+export function nextDuplicateName(baseName: string, existingNames: string[]): string {
+  const taken = new Set(existingNames.map((name) => name.trim().toLowerCase()));
+  let candidate = `${baseName} Copy`;
+  let n = 2;
+  while (taken.has(candidate.trim().toLowerCase())) {
+    candidate = `${baseName} Copy ${n}`;
+    n += 1;
+  }
+  return candidate;
 }
 
 // Used by "Save as Template" on a freshly generated WorkoutPlan
@@ -137,7 +190,133 @@ export function toTemplateSummary(template: WorkoutTemplate): TemplateSummary {
     goal: template.goal,
     daysPerWeek: template.daysPerWeek,
     dayCount: template.days.length,
+    dayNames: template.days.map((day) => day.dayName),
+    exerciseNames: template.days.flatMap((day) => day.exercises.map((exercise) => exercise.name)),
+    isFavorite: template.isFavorite,
     createdAt: template.createdAt,
     updatedAt: template.updatedAt,
   };
+}
+
+// Case-insensitive substring match across name, description, day names, and
+// exercise names — everything the Templates search box is documented to
+// search by. Pure and synchronous so TemplateList can run it in a
+// useMemo over the already-loaded template list on every keystroke without
+// ever touching the network (see components/templates/TemplateToolbar.tsx).
+export function searchTemplates(templates: TemplateSummary[], query: string): TemplateSummary[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return templates;
+
+  return templates.filter((template) => {
+    const haystacks = [
+      template.name,
+      template.description ?? "",
+      ...template.dayNames,
+      ...template.exerciseNames,
+    ];
+    return haystacks.some((text) => text.toLowerCase().includes(q));
+  });
+}
+
+export type TemplateFilter = "all" | "favorites";
+
+export function filterTemplates(templates: TemplateSummary[], filter: TemplateFilter): TemplateSummary[] {
+  return filter === "favorites" ? templates.filter((template) => template.isFavorite) : templates;
+}
+
+export type TemplateSortMode = "favorites_first" | "recently_updated" | "name_asc" | "name_desc";
+
+export const TEMPLATE_SORT_LABELS: Record<TemplateSortMode, string> = {
+  favorites_first: "Favorites first",
+  recently_updated: "Recently updated",
+  name_asc: "Name A–Z",
+  name_desc: "Name Z–A",
+};
+
+// Every mode breaks ties by most-recently-updated, so the ordering never
+// looks arbitrary for templates that are otherwise equal (same favorite
+// state, same name) — a stable secondary sort per this phase's favorites
+// requirement, generalized to the other sort modes too.
+export function sortTemplates(templates: TemplateSummary[], mode: TemplateSortMode): TemplateSummary[] {
+  const byRecency = (a: TemplateSummary, b: TemplateSummary) =>
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+
+  const sorted = [...templates];
+  switch (mode) {
+    case "favorites_first":
+      return sorted.sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite) || byRecency(a, b));
+    case "recently_updated":
+      return sorted.sort(byRecency);
+    case "name_asc":
+      return sorted.sort((a, b) => a.name.localeCompare(b.name) || byRecency(a, b));
+    case "name_desc":
+      return sorted.sort((a, b) => b.name.localeCompare(a.name) || byRecency(a, b));
+  }
+}
+
+// Field-scoped validation for TemplateEditor. Each issue's `path` matches
+// the field it belongs to (see the *_ERROR_PATH helpers below) so the
+// editor can render every message right under the input it describes,
+// rather than a single generic banner — TemplateDayEditor/
+// TemplateExerciseEditor look their own errors up by path, keyed the same
+// way aria-describedby ties an input to its error paragraph elsewhere in
+// this app (see components/auth/PasswordInput.tsx).
+export interface TemplateValidationIssue {
+  path: string;
+  message: string;
+}
+
+export const nameErrorPath = () => "name";
+export const dayNameErrorPath = (dayIndex: number) => `day-${dayIndex}-name`;
+export const dayExercisesErrorPath = (dayIndex: number) => `day-${dayIndex}-exercises`;
+export const exerciseFieldErrorPath = (dayIndex: number, exerciseIndex: number, field: string) =>
+  `exercise-${dayIndex}-${exerciseIndex}-${field}`;
+
+export function validateTemplateInput(input: { name: string; days: TemplateDay[] }): TemplateValidationIssue[] {
+  const issues: TemplateValidationIssue[] = [];
+
+  if (!input.name.trim()) {
+    issues.push({ path: nameErrorPath(), message: "Give this template a name." });
+  }
+
+  if (input.days.length === 0) {
+    issues.push({ path: "days", message: "Add at least one day." });
+  }
+
+  input.days.forEach((day, dayIndex) => {
+    if (!day.dayName.trim()) {
+      issues.push({ path: dayNameErrorPath(dayIndex), message: "Name this day." });
+    }
+    if (day.exercises.length === 0) {
+      issues.push({ path: dayExercisesErrorPath(dayIndex), message: "Add at least one exercise." });
+    }
+    day.exercises.forEach((exercise, exerciseIndex) => {
+      if (!exercise.name.trim()) {
+        issues.push({
+          path: exerciseFieldErrorPath(dayIndex, exerciseIndex, "name"),
+          message: "Name this exercise.",
+        });
+      }
+      if (!Number.isInteger(exercise.sets) || exercise.sets < 1) {
+        issues.push({
+          path: exerciseFieldErrorPath(dayIndex, exerciseIndex, "sets"),
+          message: "Sets must be a positive whole number.",
+        });
+      }
+      if (!exercise.reps.trim()) {
+        issues.push({
+          path: exerciseFieldErrorPath(dayIndex, exerciseIndex, "reps"),
+          message: "Enter a rep target (e.g. 8-12).",
+        });
+      }
+      if (!Number.isInteger(exercise.restSeconds) || exercise.restSeconds < 0) {
+        issues.push({
+          path: exerciseFieldErrorPath(dayIndex, exerciseIndex, "rest"),
+          message: "Rest must be zero or greater.",
+        });
+      }
+    });
+  });
+
+  return issues;
 }

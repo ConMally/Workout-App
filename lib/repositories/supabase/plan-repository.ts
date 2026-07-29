@@ -174,7 +174,7 @@ export function createSupabasePlanRepository(client: SupabaseClient<Database>): 
         .maybeSingle();
 
       if (error) throw error;
-      return data ? toSavedPlanState(data as PlanRowWithChildren) : null;
+      return data ? toSavedPlanState(data as unknown as PlanRowWithChildren) : null;
     },
 
     // Generating/regenerating a plan is a new plan identity: remove any
