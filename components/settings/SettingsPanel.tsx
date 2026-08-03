@@ -71,12 +71,6 @@ export default function SettingsPanel({ settings, hasActiveWorkout, onUpdateSett
             onChange={(seconds) => onUpdateSettings({ defaultRestSeconds: seconds })}
           />
         </ToggleRow>
-        <Switch
-          label="Show exercise guide automatically"
-          description="Expand instructions and coaching cues by default during a workout."
-          checked={settings.showExerciseGuideAutomatically}
-          onChange={(checked) => onUpdateSettings({ showExerciseGuideAutomatically: checked })}
-        />
       </SettingsSection>
 
       <SettingsSection title="Appearance">

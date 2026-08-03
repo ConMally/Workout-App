@@ -77,6 +77,7 @@ function toCompletedWorkout(row: WorkoutRowWithChildren): CompletedWorkout {
       const setRows = requireArray(exercise.completed_workout_sets, "completed_workout_sets", row.id);
       return {
         name: exercise.name,
+        exerciseId: exercise.exercise_id,
         targetSets: exercise.target_sets,
         targetReps: exercise.target_reps,
         targetRestSeconds: exercise.target_rest_seconds,
@@ -110,6 +111,7 @@ async function insertCompletedWorkoutChildren(
         completed_workout_id: workoutId,
         sort_order: sortOrder,
         name: exercise.name,
+        exercise_id: exercise.exerciseId,
         target_sets: exercise.targetSets,
         target_reps: exercise.targetReps,
         target_rest_seconds: exercise.targetRestSeconds,

@@ -340,6 +340,7 @@ export interface Database {
           active_workout_id: string;
           sort_order: number;
           name: string;
+          exercise_id: string | null;
           target_sets: number;
           target_reps: string;
           target_rest_seconds: number;
@@ -354,6 +355,7 @@ export interface Database {
           active_workout_id: string;
           sort_order: number;
           name: string;
+          exercise_id?: string | null;
           target_sets: number;
           target_reps: string;
           target_rest_seconds: number;
@@ -368,6 +370,7 @@ export interface Database {
           active_workout_id?: string;
           sort_order?: number;
           name?: string;
+          exercise_id?: string | null;
           target_sets?: number;
           target_reps?: string;
           target_rest_seconds?: number;
@@ -466,6 +469,7 @@ export interface Database {
           completed_workout_id: string;
           sort_order: number;
           name: string;
+          exercise_id: string | null;
           target_sets: number;
           target_reps: string;
           target_rest_seconds: number;
@@ -480,6 +484,7 @@ export interface Database {
           completed_workout_id: string;
           sort_order: number;
           name: string;
+          exercise_id?: string | null;
           target_sets: number;
           target_reps: string;
           target_rest_seconds: number;
@@ -494,6 +499,7 @@ export interface Database {
           completed_workout_id?: string;
           sort_order?: number;
           name?: string;
+          exercise_id?: string | null;
           target_sets?: number;
           target_reps?: string;
           target_rest_seconds?: number;
@@ -890,6 +896,7 @@ export interface Database {
           user_id: string;
           template_day_id: string;
           exercise_name: string;
+          exercise_id: string | null;
           sets: number;
           reps: string;
           rest_seconds: number;
@@ -903,6 +910,7 @@ export interface Database {
           user_id: string;
           template_day_id: string;
           exercise_name: string;
+          exercise_id?: string | null;
           sets: number;
           reps: string;
           rest_seconds: number;
@@ -916,6 +924,7 @@ export interface Database {
           user_id?: string;
           template_day_id?: string;
           exercise_name?: string;
+          exercise_id?: string | null;
           sets?: number;
           reps?: string;
           rest_seconds?: number;

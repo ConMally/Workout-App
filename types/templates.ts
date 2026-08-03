@@ -18,6 +18,19 @@ import { GoalEnum } from "@/lib/schemas";
 // to reorder by for an already-persisted template.
 export const TemplateExerciseSchema = z.object({
   id: z.string().optional(),
+  // Stable centralized-exercise-library id (lib/exercises/data.ts). Nullable
+  // and defaulted so every template saved before library-only selection
+  // existed still parses — those rows resolve by `name`/alias instead (see
+  // lib/exercises/library.ts#resolveExerciseDefinition). Newly added/
+  // replaced exercises always set this: the editor no longer accepts a
+  // free-text name, only a pick from the library (see
+  // components/exercises/ExercisePickerDialog.tsx).
+  exerciseId: z.string().nullable().default(null),
+  // Display name — kept alongside exerciseId (not replaced by it) so every
+  // existing consumer that already reads `name` (search, plan conversion,
+  // history matching) keeps working unchanged, and so a "legacy" exercise
+  // (exerciseId null, name doesn't match any library entry) still has
+  // something to show.
   name: z.string().min(1).max(120),
   sets: z.number().int().min(1).max(10),
   reps: z.string().min(1).max(20),

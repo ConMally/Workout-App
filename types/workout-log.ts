@@ -16,6 +16,14 @@ export type LoggedSet = z.infer<typeof LoggedSetSchema>;
 
 export const LoggedExerciseSchema = z.object({
   name: z.string(),
+  // Stable centralized-exercise-library id, resolved by name/alias at
+  // workout-creation time (see lib/workout-log.ts#createActiveWorkout) —
+  // nullable/defaulted so every active/completed workout logged before this
+  // field existed still parses. FocusedExercise looks up guide metadata by
+  // this id first, falling back to name/alias matching only when it's null
+  // (legacy record, or a name the library has never had) — see
+  // lib/exercises/library.ts#resolveExerciseDefinition.
+  exerciseId: z.string().nullable().default(null),
   targetSets: z.number().int().min(1),
   targetReps: z.string(),
   targetRestSeconds: z.number().int().min(0),
@@ -82,6 +90,13 @@ export const AppSettingsSchema = z.object({
   timerSound: z.boolean().default(true),
   vibration: z.boolean().default(true),
   defaultRestSeconds: z.number().int().min(0).max(600).default(90),
+  // Deprecated: the exercise guide in the active-workout focused view is
+  // now always collapsed until the user opens it by hand (see
+  // components/workout/FocusedExercise.tsx) — there's no longer an
+  // "automatically" behavior for this to control. The field stays (rather
+  // than being dropped) purely so existing stored settings rows keep
+  // parsing; nothing reads it anymore, and the UI no longer exposes a
+  // control for it (see components/settings/SettingsPanel.tsx).
   showExerciseGuideAutomatically: z.boolean().default(true),
   // Appearance
   darkMode: z.boolean().default(false),

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, type RefObject } from "react";
+import { useState, type RefObject } from "react";
 import type { CompletedWorkout, LoggedExercise, WeightUnit } from "@/types/workout-log";
 import { DIFFICULTY_LABELS, MOVEMENT_PATTERN_LABELS, MUSCLE_GROUP_LABELS } from "@/types/exercises";
-import { getExerciseByName } from "@/lib/exercises/library";
+import { resolveExerciseDefinition } from "@/lib/exercises/library";
 import { findLastPerformance } from "@/lib/workout-log";
 import { getExerciseStats } from "@/lib/insights";
 import { getProgressionSuggestion } from "@/lib/progression";
@@ -15,8 +15,6 @@ interface FocusedExerciseProps {
   totalExercises: number;
   history: CompletedWorkout[];
   weightUnit: WeightUnit;
-  alreadyViewed: boolean;
-  onViewed: () => void;
   onChange: (updated: LoggedExercise) => void;
   onSetCompleted: (restSeconds: number) => void;
   onSelectExercise: (name: string) => void;
@@ -24,25 +22,23 @@ interface FocusedExerciseProps {
   onContinue: () => void;
   headingRef: RefObject<HTMLHeadingElement | null>;
   vibrationEnabled: boolean;
-  showGuideByDefault: boolean;
 }
 
 // The "one exercise at a time" focused view (Phase 6.1, PART 1/4): exercise
-// identity + library metadata (when available) + an optional Exercise Guide
-// accordion (PART 4) + previous-performance stats, wrapped around the
-// existing ExerciseLogger for the actual set-logging mechanics. Renders
-// normally with the metadata sections simply omitted when the exercise
-// isn't in the centralized library (PART 4: "without crashing or inventing
-// metadata") — every field below comes straight from lib/exercises data or
-// lib/insights/lib/progression, nothing here is a new calculation.
+// identity + previous-performance stats, wrapped around the existing
+// ExerciseLogger for the actual set-logging mechanics, plus a collapsed-by-
+// default "Exercise instructions" accordion holding every bit of library
+// metadata (setup, execution steps, breathing, cues, mistakes, safety
+// notes, muscles worked, equipment, difficulty). None of that guide content
+// renders anywhere outside the accordion — the header above only ever shows
+// workout data (targets, best weight/1RM), never instructions, so nothing
+// exercise-guide-related is visible until the user opens it by hand.
 export default function FocusedExercise({
   exercise,
   exerciseIndex,
   totalExercises,
   history,
   weightUnit,
-  alreadyViewed,
-  onViewed,
   onChange,
   onSetCompleted,
   onSelectExercise,
@@ -50,29 +46,20 @@ export default function FocusedExercise({
   onContinue,
   headingRef,
   vibrationEnabled,
-  showGuideByDefault,
 }: FocusedExerciseProps) {
-  const definition = getExerciseByName(exercise.name);
+  const definition = resolveExerciseDefinition(exercise.exerciseId, exercise.name);
   const lastPerformance = findLastPerformance(history, exercise.name);
   const stats = getExerciseStats(history, exercise.name);
   const suggestion = lastPerformance ? getProgressionSuggestion(lastPerformance) : null;
-  const hasHistory = stats.workoutCount > 0;
 
-  // Expanded by default the first time this exercise is viewed this
-  // session, and again every time for an exercise with no logged history to
-  // lean on — collapsed on repeat visits once the user has both seen the
-  // guide and has their own data to go by (PART 4). The "Show exercise
-  // guide automatically" setting is a hard override: when off, the guide
-  // always starts collapsed (still expandable by hand).
-  const [guideExpanded, setGuideExpanded] = useState(showGuideByDefault && (!alreadyViewed || !hasHistory));
+  // Always collapsed on arrival — this component is remounted by its parent
+  // (key={activeIndex}) on every exercise change, so a fresh `false` here
+  // is exactly "keep it collapsed whenever the user navigates to a new
+  // exercise." There's no longer a setting or heuristic that auto-expands
+  // it; opening the guide is always a deliberate click.
+  const [guideExpanded, setGuideExpanded] = useState(false);
 
-  useEffect(() => {
-    onViewed();
-    // Runs once per mount — this component is remounted by its parent
-    // (key={activeIndex}) each time the focused exercise changes, so this
-    // fires exactly once per visit to a given exercise.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const guideId = `exercise-guide-${exerciseIndex}`;
 
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-4">
@@ -83,25 +70,6 @@ export default function FocusedExercise({
         <h2 ref={headingRef} tabIndex={-1} className="mt-0.5 text-2xl font-bold text-slate-900 focus:outline-none dark:text-slate-100">
           {exercise.name}
         </h2>
-
-        {definition && (
-          <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
-            <span className="rounded-full bg-teal-100 px-2.5 py-1 font-medium text-teal-800 dark:bg-teal-950/50 dark:text-teal-300">
-              {MUSCLE_GROUP_LABELS[definition.primaryMuscle]}
-            </span>
-            {definition.secondaryMuscles.map((m) => (
-              <span key={m} className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                + {MUSCLE_GROUP_LABELS[m]}
-              </span>
-            ))}
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              {MOVEMENT_PATTERN_LABELS[definition.movementPattern]}
-            </span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium capitalize text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              {definition.equipment.join(", ").replace(/_/g, " ")}
-            </span>
-          </div>
-        )}
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Target" value={`${exercise.targetSets} × ${exercise.targetReps}`} />
@@ -124,56 +92,94 @@ export default function FocusedExercise({
           </p>
         )}
 
-        {definition && (
-          <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => setGuideExpanded((v) => !v)}
-              aria-expanded={guideExpanded}
-              aria-controls={`exercise-guide-${exerciseIndex}`}
-              className="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-slate-800 dark:text-slate-200"
-            >
-              <span>Exercise guide</span>
-              <span aria-hidden="true" className={`transition-transform ${guideExpanded ? "rotate-180" : ""}`}>
-                ▾
-              </span>
-            </button>
+        <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+          {definition ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setGuideExpanded((v) => !v)}
+                aria-expanded={guideExpanded}
+                aria-controls={guideId}
+                className="flex w-full items-center justify-between gap-2 rounded-lg text-left text-sm font-semibold text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 dark:text-slate-200"
+              >
+                <span>View exercise guide</span>
+                <span aria-hidden="true" className={`motion-safe:transition-transform ${guideExpanded ? "rotate-180" : ""}`}>
+                  ▾
+                </span>
+              </button>
 
-            {guideExpanded && (
-              <div id={`exercise-guide-${exerciseIndex}`} className="motion-safe:animate-step-in mt-3 flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <Stat label="Difficulty" value={DIFFICULTY_LABELS[definition.difficulty] ?? definition.difficulty} />
-                  <Stat label="Movement" value={MOVEMENT_PATTERN_LABELS[definition.movementPattern]} />
-                  <Stat label="Equipment" value={definition.equipment.join(", ").replace(/_/g, " ")} />
+              {guideExpanded && (
+                <div id={guideId} className="motion-safe:animate-step-in mt-3 flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <Stat label="Difficulty" value={DIFFICULTY_LABELS[definition.difficulty] ?? definition.difficulty} />
+                    <Stat label="Movement" value={MOVEMENT_PATTERN_LABELS[definition.movementPattern]} />
+                    <Stat label="Equipment" value={definition.equipment.join(", ").replace(/_/g, " ")} />
+                  </div>
+
+                  <GuideSection title="Muscles worked">
+                    <p className="text-sm text-slate-700 dark:text-slate-300">
+                      {MUSCLE_GROUP_LABELS[definition.primaryMuscle]}
+                      {definition.secondaryMuscles.length > 0 &&
+                        ` — also ${definition.secondaryMuscles.map((m) => MUSCLE_GROUP_LABELS[m]).join(", ")}`}
+                    </p>
+                  </GuideSection>
+
+                  {definition.setupInstructions && definition.setupInstructions.length > 0 && (
+                    <GuideSection title="Setup">
+                      <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+                        {definition.setupInstructions.map((step, i) => (
+                          <li key={i}>{step}</li>
+                        ))}
+                      </ol>
+                    </GuideSection>
+                  )}
+
+                  <GuideSection title="Execution">
+                    <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+                      {definition.instructions.map((step, i) => (
+                        <li key={i}>{step}</li>
+                      ))}
+                    </ol>
+                  </GuideSection>
+
+                  {definition.breathingGuidance && (
+                    <GuideSection title="Breathing">
+                      <p className="text-sm text-slate-700 dark:text-slate-300">{definition.breathingGuidance}</p>
+                    </GuideSection>
+                  )}
+
+                  <GuideSection title="Coaching cues">
+                    <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+                      {definition.coachingCues.map((cue, i) => (
+                        <li key={i}>{cue}</li>
+                      ))}
+                    </ul>
+                  </GuideSection>
+
+                  <GuideSection title="Common mistakes">
+                    <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+                      {definition.commonMistakes.map((mistake, i) => (
+                        <li key={i}>{mistake}</li>
+                      ))}
+                    </ul>
+                  </GuideSection>
+
+                  {definition.safetyNotes && definition.safetyNotes.length > 0 && (
+                    <GuideSection title="Safety notes">
+                      <ul className="list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-400">
+                        {definition.safetyNotes.map((note, i) => (
+                          <li key={i}>{note}</li>
+                        ))}
+                      </ul>
+                    </GuideSection>
+                  )}
                 </div>
-
-                <GuideSection title="Instructions">
-                  <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
-                    {definition.instructions.map((step, i) => (
-                      <li key={i}>{step}</li>
-                    ))}
-                  </ol>
-                </GuideSection>
-
-                <GuideSection title="Coaching cues">
-                  <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
-                    {definition.coachingCues.map((cue, i) => (
-                      <li key={i}>{cue}</li>
-                    ))}
-                  </ul>
-                </GuideSection>
-
-                <GuideSection title="Common mistakes">
-                  <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
-                    {definition.commonMistakes.map((mistake, i) => (
-                      <li key={i}>{mistake}</li>
-                    ))}
-                  </ul>
-                </GuideSection>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-slate-400 dark:text-slate-500">Exercise instructions are not available for this exercise.</p>
+          )}
+        </div>
       </div>
 
       <ExerciseLogger

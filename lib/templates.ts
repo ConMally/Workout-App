@@ -1,5 +1,7 @@
+import type { ExerciseDefinition } from "@/types/exercises";
 import type { TemplateDay, TemplateExercise, TemplateSummary, WorkoutTemplate } from "@/types/templates";
 import type { WorkoutPlan } from "@/types/workout";
+import { getExerciseById, getExerciseByName } from "./exercises/library";
 import { GOAL_LABELS } from "./workout-generator";
 
 // Pure helpers for constructing and converting templates — mirrors
@@ -20,17 +22,35 @@ export function moveItem<T>(items: T[], index: number, direction: "up" | "down")
   return next;
 }
 
-export function createEmptyTemplateExercise(): TemplateExercise {
-  return { id: crypto.randomUUID(), name: "", sets: 3, reps: "8-12", restSeconds: 90, notes: "" };
+// Only way a TemplateExercise is ever created now — exercise selection goes
+// through ExercisePickerDialog (library-only, no free-text name entry), so
+// exerciseId is always populated here rather than left to be resolved
+// later. Sets/reps/rest start from the definition's own recommendations
+// (still fully editable afterward) instead of a generic 3x8-12 guess.
+export function templateExerciseFromDefinition(definition: ExerciseDefinition): TemplateExercise {
+  return {
+    id: crypto.randomUUID(),
+    exerciseId: definition.id,
+    name: definition.name,
+    sets: 3,
+    reps: `${definition.recommendedRepRange.min}-${definition.recommendedRepRange.max}`,
+    restSeconds: definition.recommendedRestSeconds.min,
+    notes: "",
+  };
 }
 
+// Starts with zero exercises rather than one blank one — there's no more
+// "blank" exercise to create (see templateExerciseFromDefinition above), so
+// a fresh day just prompts "+ Add exercise" via the picker.
+// validateTemplateInput's "Add at least one exercise" check is what
+// actually blocks saving a day with none, same as it always has.
 export function createEmptyTemplateDay(dayNumber: number): TemplateDay {
   return {
     id: crypto.randomUUID(),
     dayNumber,
     dayName: `Day ${dayNumber + 1}`,
     focus: "",
-    exercises: [createEmptyTemplateExercise()],
+    exercises: [],
   };
 }
 
@@ -101,6 +121,16 @@ export function nextDuplicateName(baseName: string, existingNames: string[]): st
 // (components/templates/SaveAsTemplateDialog.tsx via app/page.tsx). Drops
 // warmup/cooldown/notes-on-first-exercise-only formatting — a template
 // keeps just the reusable sets/reps/rest/notes structure.
+//
+// The rule-based generator (lib/workout-generator.ts) builds exercises by
+// name from its own pools, entirely independent of the centralized
+// exercise library — so every exercise here is resolved to a library id by
+// exact name/alias match on a best-effort basis. A generator exercise that
+// doesn't resolve still becomes a normal (legacy-style) template exercise —
+// never dropped, never blocked — but logs a dev-only warning, since an
+// unresolved name here means the generator's pool and the library have
+// drifted apart, which is worth a developer's attention rather than
+// silently shipping an instruction-less template entry with no signal.
 export function templateFromWorkoutPlan(
   plan: WorkoutPlan,
   goal: WorkoutTemplate["goal"],
@@ -111,13 +141,22 @@ export function templateFromWorkoutPlan(
     dayNumber: index,
     dayName: day.title,
     focus: day.focus,
-    exercises: day.exercises.map((exercise) => ({
-      name: exercise.name,
-      sets: exercise.sets,
-      reps: exercise.reps,
-      restSeconds: exercise.restSeconds,
-      notes: exercise.notes,
-    })),
+    exercises: day.exercises.map((exercise) => {
+      const definition = getExerciseByName(exercise.name);
+      if (!definition && process.env.NODE_ENV !== "production") {
+        console.error(
+          `[templates] templateFromWorkoutPlan: generated exercise "${exercise.name}" has no match in the centralized exercise library — saved as a legacy entry with no id.`
+        );
+      }
+      return {
+        exerciseId: definition?.id ?? null,
+        name: exercise.name,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        restSeconds: exercise.restSeconds,
+        notes: exercise.notes,
+      };
+    }),
   }));
 
   return createTemplate({ name, description, goal, days });
@@ -313,6 +352,20 @@ export function validateTemplateInput(input: { name: string; days: TemplateDay[]
         issues.push({
           path: exerciseFieldErrorPath(dayIndex, exerciseIndex, "rest"),
           message: "Rest must be zero or greater.",
+        });
+      }
+      // Only checked when an id is actually present — a legacy exercise
+      // (exerciseId null) is always allowed to save as-is, per "do not
+      // prevent users from viewing or using old templates solely because
+      // they contain a legacy name." This instead catches the one case
+      // that *should* block saving: an id that was valid when set but no
+      // longer resolves (a defensive integrity check, not expected to fire
+      // in normal use since ExercisePickerDialog only ever hands back real
+      // library ids).
+      if (exercise.exerciseId && !getExerciseById(exercise.exerciseId)) {
+        issues.push({
+          path: exerciseFieldErrorPath(dayIndex, exerciseIndex, "name"),
+          message: "This exercise is no longer in the library — replace it before saving.",
         });
       }
     });

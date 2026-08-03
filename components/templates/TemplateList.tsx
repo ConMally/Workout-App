@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { TemplateSummary, WorkoutTemplate } from "@/types/templates";
+import type { CompletedWorkout, WeightUnit } from "@/types/workout-log";
 import {
   filterTemplates,
   nextDuplicateName,
@@ -21,6 +22,10 @@ import UseTemplateDialog from "./UseTemplateDialog";
 interface TemplateListProps {
   templates: TemplateSummary[];
   hasActivePlan: boolean;
+  history: CompletedWorkout[];
+  weightUnit: WeightUnit;
+  favoriteExerciseIds: Set<string>;
+  onToggleExerciseFavorite: (exerciseId: string) => void;
   onCreate: (input: TemplateEditorSubmitInput) => Promise<void>;
   onUpdate: (template: WorkoutTemplate) => Promise<void>;
   onDelete: (templateId: string) => Promise<void>;
@@ -44,6 +49,10 @@ function nameCollides(templates: TemplateSummary[], name: string, excludeId?: st
 export default function TemplateList({
   templates,
   hasActivePlan,
+  history,
+  weightUnit,
+  favoriteExerciseIds,
+  onToggleExerciseFavorite,
   onCreate,
   onUpdate,
   onDelete,
@@ -208,6 +217,10 @@ export default function TemplateList({
         </div>
         <TemplateEditor
           initialTemplate={view.mode === "edit" ? view.template : null}
+          history={history}
+          weightUnit={weightUnit}
+          favoriteExerciseIds={favoriteExerciseIds}
+          onToggleExerciseFavorite={onToggleExerciseFavorite}
           onSubmit={handleSubmit}
           onCancel={handleEditorCancel}
           submitting={submitting}

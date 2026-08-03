@@ -84,7 +84,6 @@ export default function ActiveWorkout({
 }: ActiveWorkoutProps) {
   const [restTrigger, setRestTrigger] = useState<RestTimerTrigger | null>(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
-  const [viewedIndexes, setViewedIndexes] = useState<Set<number>>(() => new Set());
   const headingRef = useRef<HTMLHeadingElement>(null);
   const isFirstNavRef = useRef(true);
 
@@ -287,17 +286,12 @@ export default function ActiveWorkout({
           totalExercises={workout.exercises.length}
           history={history}
           weightUnit={settings.weightUnit}
-          alreadyViewed={viewedIndexes.has(nav.activeIndex)}
-          onViewed={() =>
-            setViewedIndexes((prev) => (prev.has(nav.activeIndex) ? prev : new Set(prev).add(nav.activeIndex)))
-          }
           onChange={updateExercise}
           onSetCompleted={handleSetCompleted}
           onSelectExercise={onSelectExercise}
           hasNext={nav.canGoNext}
           onContinue={nav.goNext}
           vibrationEnabled={settings.vibration}
-          showGuideByDefault={settings.showExerciseGuideAutomatically}
         />
       </div>
 

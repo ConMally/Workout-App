@@ -1,5 +1,6 @@
 import type { WorkoutPlan } from "@/types/workout";
 import type { ActiveWorkout, CompletedWorkout, LoggedExercise } from "@/types/workout-log";
+import { getExerciseByName } from "./exercises/library";
 
 // Pure construction and derivation helpers for the workout-log domain —
 // building a fresh ActiveWorkout from a plan day, computing duration/stats,
@@ -8,6 +9,17 @@ import type { ActiveWorkout, CompletedWorkout, LoggedExercise } from "@/types/wo
 
 type TrainingDay = WorkoutPlan["weeklySchedule"][number];
 
+// The single place every active workout is built, regardless of source —
+// a freshly generated plan, a template-derived plan (lib/templates.ts
+// #planFromTemplate), a plan the user hand-edited, or one with a replaced
+// exercise (all of those end up as a TrainingDay by the time this runs) —
+// so resolving exerciseId here by exact name/alias match against the
+// centralized library (PART 3) automatically covers every source without
+// needing a separate id-propagation path for each one. A template
+// exercise's `name` is always its library canonical name once resolved, so
+// this lookup succeeds for it exactly as reliably as threading the id
+// through directly would; only a legacy/unresolved exercise ever falls
+// through to a null exerciseId here.
 export function createActiveWorkout(day: TrainingDay, dayIndex: number): ActiveWorkout {
   return {
     id: crypto.randomUUID(),
@@ -18,6 +30,7 @@ export function createActiveWorkout(day: TrainingDay, dayIndex: number): ActiveW
     dayFocus: day.focus,
     exercises: day.exercises.map((exercise) => ({
       name: exercise.name,
+      exerciseId: getExerciseByName(exercise.name)?.id ?? null,
       targetSets: exercise.sets,
       targetReps: exercise.reps,
       targetRestSeconds: exercise.restSeconds,

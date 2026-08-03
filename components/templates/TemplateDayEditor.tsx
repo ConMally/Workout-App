@@ -1,13 +1,21 @@
 "use client";
 
+import { useState } from "react";
+import type { CompletedWorkout, WeightUnit } from "@/types/workout-log";
 import type { TemplateDay } from "@/types/templates";
-import { createEmptyTemplateExercise, moveItem } from "@/lib/templates";
+import type { ExerciseDefinition } from "@/types/exercises";
+import { moveItem, templateExerciseFromDefinition } from "@/lib/templates";
 import TemplateExerciseEditor from "./TemplateExerciseEditor";
+import ExercisePickerDialog from "@/components/exercises/ExercisePickerDialog";
 
 interface TemplateDayEditorProps {
   day: TemplateDay;
   index: number;
   count: number;
+  history: CompletedWorkout[];
+  weightUnit: WeightUnit;
+  favoriteIds: Set<string>;
+  onToggleFavorite: (exerciseId: string) => void;
   errors?: Record<string, string>;
   onChange: (day: TemplateDay) => void;
   onRemove: () => void;
@@ -15,16 +23,29 @@ interface TemplateDayEditorProps {
   removeDisabled: boolean;
 }
 
+// Add mode appends a new exercise built from the picked library entry;
+// replace mode swaps the exercise at `exerciseIndex` in place, keeping its
+// existing id/sets/reps/restSeconds/notes (only what it *refers to*
+// changes) — PART 1's "keep sets, reps, rest, notes... unchanged" and
+// "clicking an existing exercise name should allow replacing it through
+// the same selector."
+type PickerMode = { kind: "add" } | { kind: "replace"; exerciseIndex: number };
+
 export default function TemplateDayEditor({
   day,
   index,
   count,
+  history,
+  weightUnit,
+  favoriteIds,
+  onToggleFavorite,
   errors,
   onChange,
   onRemove,
   onMove,
   removeDisabled,
 }: TemplateDayEditorProps) {
+  const [pickerMode, setPickerMode] = useState<PickerMode | null>(null);
   const dayNameError = errors?.[`day-${index}-name`];
   const exercisesError = errors?.[`day-${index}-exercises`];
 
@@ -33,16 +54,23 @@ export default function TemplateDayEditor({
     onChange({ ...day, exercises });
   }
 
-  function addExercise() {
-    onChange({ ...day, exercises: [...day.exercises, createEmptyTemplateExercise()] });
-  }
-
   function removeExercise(exerciseIndex: number) {
     onChange({ ...day, exercises: day.exercises.filter((_, i) => i !== exerciseIndex) });
   }
 
   function moveExercise(exerciseIndex: number, direction: "up" | "down") {
     onChange({ ...day, exercises: moveItem(day.exercises, exerciseIndex, direction) });
+  }
+
+  function handlePickerSelect(definition: ExerciseDefinition) {
+    if (!pickerMode) return;
+    if (pickerMode.kind === "add") {
+      onChange({ ...day, exercises: [...day.exercises, templateExerciseFromDefinition(definition)] });
+    } else {
+      const current = day.exercises[pickerMode.exerciseIndex];
+      updateExercise(pickerMode.exerciseIndex, { ...current, exerciseId: definition.id, name: definition.name });
+    }
+    setPickerMode(null);
   }
 
   return (
@@ -125,6 +153,10 @@ export default function TemplateDayEditor({
             exercise={exercise}
             index={exerciseIndex}
             count={day.exercises.length}
+            history={history}
+            weightUnit={weightUnit}
+            favoriteIds={favoriteIds}
+            onToggleFavorite={onToggleFavorite}
             errors={{
               name: errors?.[`exercise-${index}-${exerciseIndex}-name`],
               sets: errors?.[`exercise-${index}-${exerciseIndex}-sets`],
@@ -132,20 +164,33 @@ export default function TemplateDayEditor({
               rest: errors?.[`exercise-${index}-${exerciseIndex}-rest`],
             }}
             onChange={(next) => updateExercise(exerciseIndex, next)}
+            onReplace={() => setPickerMode({ kind: "replace", exerciseIndex })}
             onRemove={() => removeExercise(exerciseIndex)}
             onMove={(direction) => moveExercise(exerciseIndex, direction)}
-            removeDisabled={day.exercises.length <= 1}
+            removeDisabled={false}
           />
         ))}
       </div>
 
       <button
         type="button"
-        onClick={addExercise}
+        onClick={() => setPickerMode({ kind: "add" })}
         className="mt-3 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-teal-700 transition hover:bg-teal-50"
       >
         + Add exercise
       </button>
+
+      {pickerMode && (
+        <ExercisePickerDialog
+          title={pickerMode.kind === "add" ? "Add exercise" : "Replace exercise"}
+          description="Search the centralized exercise library — every template exercise references a real library entry."
+          history={history}
+          favoriteIds={favoriteIds}
+          onToggleFavorite={onToggleFavorite}
+          onSelect={handlePickerSelect}
+          onCancel={() => setPickerMode(null)}
+        />
+      )}
     </div>
   );
 }

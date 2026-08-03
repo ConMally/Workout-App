@@ -56,3 +56,19 @@ export function toLegacyMuscleGroup(group: MuscleGroup): LegacyMuscleGroup {
 export function listExercisesByMuscle(group: MuscleGroup): ExerciseDefinition[] {
   return EXERCISE_DATABASE.filter((e) => e.primaryMuscle === group);
 }
+
+// The one place both TemplateExercise and LoggedExercise should go through
+// to find their library metadata: id first (exact, unambiguous — set
+// whenever the exercise was added/replaced through the library picker),
+// falling back to name/alias matching only when there's no id — a legacy
+// record saved before stable ids existed, or a free-text name that was
+// never in the library to begin with. Returns null rather than throwing so
+// callers can render a "not available" state instead of crashing on a
+// legacy or unrecognized exercise.
+export function resolveExerciseDefinition(exerciseId: string | null | undefined, name: string): ExerciseDefinition | null {
+  if (exerciseId) {
+    const byId = getExerciseById(exerciseId);
+    if (byId) return byId;
+  }
+  return getExerciseByName(name);
+}

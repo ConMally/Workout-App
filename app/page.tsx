@@ -1069,6 +1069,10 @@ export default function Home() {
             <TemplateList
               templates={templates}
               hasActivePlan={hasGeneratedBefore}
+              history={history}
+              weightUnit={settings.weightUnit}
+              favoriteExerciseIds={favoriteExerciseIds}
+              onToggleExerciseFavorite={handleToggleExerciseFavorite}
               onCreate={handleCreateTemplate}
               onUpdate={handleUpdateTemplate}
               onDelete={handleDeleteTemplate}

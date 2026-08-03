@@ -1,13 +1,23 @@
 "use client";
 
+import { useState } from "react";
+import type { CompletedWorkout, WeightUnit } from "@/types/workout-log";
 import type { TemplateExercise } from "@/types/templates";
+import { MUSCLE_GROUP_LABELS } from "@/types/exercises";
+import { resolveExerciseDefinition } from "@/lib/exercises/library";
+import ExerciseDetailModal from "@/components/exercises/ExerciseDetailModal";
 
 interface TemplateExerciseEditorProps {
   exercise: TemplateExercise;
   index: number;
   count: number;
+  history: CompletedWorkout[];
+  weightUnit: WeightUnit;
+  favoriteIds: Set<string>;
+  onToggleFavorite: (exerciseId: string) => void;
   errors?: Record<string, string | undefined>;
   onChange: (exercise: TemplateExercise) => void;
+  onReplace: () => void;
   onRemove: () => void;
   onMove: (direction: "up" | "down") => void;
   removeDisabled: boolean;
@@ -17,42 +27,89 @@ const inputClass =
   "rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30";
 const errorInputClass = "border-red-300 focus:border-red-400 focus:ring-red-500/30";
 
+// PART 1: the exercise identity itself is no longer a free-text field —
+// it's resolved (id first, name/alias fallback — see
+// lib/exercises/library.ts#resolveExerciseDefinition) and displayed
+// read-only, with a "Change" button that opens the same library-only
+// picker used for "+ Add exercise" (owned by the parent TemplateDayEditor,
+// which is what actually knows how to turn a picked ExerciseDefinition
+// into a replacement here — see its handlePickerSelect). An exercise that
+// doesn't resolve (exerciseId null and the name doesn't match any library
+// entry/alias) renders as a clearly labeled "Legacy exercise" instead of
+// silently dropping or rewriting it.
 export default function TemplateExerciseEditor({
   exercise,
   index,
   count,
+  history,
+  weightUnit,
+  favoriteIds,
+  onToggleFavorite,
   errors,
   onChange,
+  onReplace,
   onRemove,
   onMove,
   removeDisabled,
 }: TemplateExerciseEditorProps) {
+  const [showDetails, setShowDetails] = useState(false);
   const nameError = errors?.name;
   const setsError = errors?.sets;
   const repsError = errors?.reps;
   const restError = errors?.rest;
 
+  const definition = resolveExerciseDefinition(exercise.exerciseId, exercise.name);
+
   return (
     <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:grid-cols-6">
-      <div className="col-span-2 flex items-start gap-1 sm:col-span-2">
-        <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-slate-600">
+      <div className="col-span-2 flex flex-col gap-1 sm:col-span-2">
+        <span id={`exercise-${index}-name-label`} className="text-xs font-medium text-slate-600">
           Exercise
-          <input
-            type="text"
-            value={exercise.name}
-            onChange={(e) => onChange({ ...exercise, name: e.target.value })}
-            placeholder="e.g. Barbell Bench Press"
-            maxLength={120}
-            aria-invalid={Boolean(nameError)}
-            aria-describedby={nameError ? `exercise-${index}-name-error` : undefined}
-            className={`${inputClass} ${nameError ? errorInputClass : ""}`}
-          />
-          {nameError && (
-            <p id={`exercise-${index}-name-error`} className="text-xs text-red-600">
-              {nameError}
-            </p>
+        </span>
+        <div
+          className={`flex flex-col gap-1.5 rounded-lg border bg-white px-2.5 py-1.5 ${nameError ? errorInputClass : "border-slate-200"}`}
+          aria-labelledby={`exercise-${index}-name-label`}
+          aria-invalid={Boolean(nameError)}
+          aria-describedby={nameError ? `exercise-${index}-name-error` : undefined}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-sm font-semibold text-slate-900">{exercise.name}</span>
+            <button
+              type="button"
+              onClick={onReplace}
+              className="flex-shrink-0 text-xs font-medium text-teal-700 hover:underline"
+            >
+              Change
+            </button>
+          </div>
+
+          {definition ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-medium capitalize text-teal-800">
+                {MUSCLE_GROUP_LABELS[definition.primaryMuscle]}
+              </span>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium capitalize text-slate-600">
+                {definition.equipment[0]?.replace(/_/g, " ")}
+              </span>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium capitalize text-slate-600">
+                {definition.difficulty}
+              </span>
+              <button type="button" onClick={() => setShowDetails(true)} className="text-[11px] font-medium text-teal-700 hover:underline">
+                View exercise details
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">Legacy exercise</span>
+              <span className="text-[11px] text-slate-500">Not in the exercise library — replace it to see instructions.</span>
+            </div>
           )}
-        </label>
+        </div>
+        {nameError && (
+          <p id={`exercise-${index}-name-error`} className="text-xs text-red-600">
+            {nameError}
+          </p>
+        )}
       </div>
 
       <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
@@ -154,6 +211,17 @@ export default function TemplateExerciseEditor({
           className={inputClass}
         />
       </label>
+
+      {showDetails && definition && (
+        <ExerciseDetailModal
+          exercise={definition}
+          history={history}
+          weightUnit={weightUnit}
+          isFavorite={favoriteIds.has(definition.id)}
+          onToggleFavorite={() => onToggleFavorite(definition.id)}
+          onClose={() => setShowDetails(false)}
+        />
+      )}
     </div>
   );
 }

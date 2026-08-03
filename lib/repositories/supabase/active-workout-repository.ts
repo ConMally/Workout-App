@@ -25,6 +25,7 @@ function toActiveWorkout(row: WorkoutRowWithChildren): ActiveWorkout {
     activeExerciseIndex: row.active_exercise_index,
     exercises: exercises.map((exercise) => ({
       name: exercise.name,
+      exerciseId: exercise.exercise_id,
       targetSets: exercise.target_sets,
       targetReps: exercise.target_reps,
       targetRestSeconds: exercise.target_rest_seconds,
@@ -58,6 +59,7 @@ async function insertActiveWorkoutChildren(
         active_workout_id: workoutId,
         sort_order: sortOrder,
         name: exercise.name,
+        exercise_id: exercise.exerciseId,
         target_sets: exercise.targetSets,
         target_reps: exercise.targetReps,
         target_rest_seconds: exercise.targetRestSeconds,
@@ -162,6 +164,7 @@ export function createSupabaseActiveWorkoutRepository(client: SupabaseClient<Dat
             active_workout_id: workout.id,
             sort_order: sortOrder,
             name: exercise.name,
+            exercise_id: exercise.exerciseId,
             target_sets: exercise.targetSets,
             target_reps: exercise.targetReps,
             target_rest_seconds: exercise.targetRestSeconds,

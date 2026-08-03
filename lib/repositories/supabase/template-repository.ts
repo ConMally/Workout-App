@@ -73,6 +73,7 @@ function toWorkoutTemplate(row: TemplateRowWithChildren): WorkoutTemplate {
         .sort((a, b) => a.order_index - b.order_index)
         .map((exercise) => ({
           id: exercise.id,
+          exerciseId: exercise.exercise_id,
           name: exercise.exercise_name,
           sets: exercise.sets,
           reps: exercise.reps,
@@ -97,6 +98,7 @@ function toDaysPayload(days: TemplateDay[]): Json {
     dayName: day.dayName,
     focus: day.focus,
     exercises: day.exercises.map((exercise) => ({
+      exerciseId: exercise.exerciseId,
       name: exercise.name,
       sets: exercise.sets,
       reps: exercise.reps,

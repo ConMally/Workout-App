@@ -5,6 +5,7 @@ import { GoalEnum } from "@/lib/schemas";
 import { GOAL_LABELS } from "@/lib/workout-generator";
 import { createEmptyTemplateDay, moveItem, validateTemplateInput } from "@/lib/templates";
 import type { TemplateDay, WorkoutTemplate } from "@/types/templates";
+import type { CompletedWorkout, WeightUnit } from "@/types/workout-log";
 import TemplateDayEditor from "./TemplateDayEditor";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
 
@@ -17,6 +18,10 @@ export interface TemplateEditorSubmitInput {
 
 interface TemplateEditorProps {
   initialTemplate?: WorkoutTemplate | null;
+  history: CompletedWorkout[];
+  weightUnit: WeightUnit;
+  favoriteExerciseIds: Set<string>;
+  onToggleExerciseFavorite: (exerciseId: string) => void;
   onSubmit: (input: TemplateEditorSubmitInput) => void;
   onCancel: () => void;
   submitting: boolean;
@@ -30,6 +35,10 @@ function initialDaysFor(template: WorkoutTemplate | null | undefined): TemplateD
 
 export default function TemplateEditor({
   initialTemplate,
+  history,
+  weightUnit,
+  favoriteExerciseIds,
+  onToggleExerciseFavorite,
   onSubmit,
   onCancel,
   submitting,
@@ -184,6 +193,10 @@ export default function TemplateEditor({
             day={day}
             index={index}
             count={days.length}
+            history={history}
+            weightUnit={weightUnit}
+            favoriteIds={favoriteExerciseIds}
+            onToggleFavorite={onToggleExerciseFavorite}
             errors={issues}
             onChange={(next) => updateDay(index, next)}
             onRemove={() => removeDay(index)}
