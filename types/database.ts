@@ -21,6 +21,8 @@ export interface Database {
           experience_level: "beginner" | "intermediate" | "advanced" | null;
           weekly_training_target: number | null;
           onboarding_completed: boolean;
+          is_admin: boolean;
+          feedback_prompt_dismissed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -31,6 +33,8 @@ export interface Database {
           experience_level?: "beginner" | "intermediate" | "advanced" | null;
           weekly_training_target?: number | null;
           onboarding_completed?: boolean;
+          is_admin?: boolean;
+          feedback_prompt_dismissed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -41,8 +45,103 @@ export interface Database {
           experience_level?: "beginner" | "intermediate" | "advanced" | null;
           weekly_training_target?: number | null;
           onboarding_completed?: boolean;
+          is_admin?: boolean;
+          feedback_prompt_dismissed_at?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      feedback: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: "bug" | "feature" | "general" | "rating";
+          message: string | null;
+          rating: number | null;
+          page: string | null;
+          app_version: string | null;
+          user_agent: string | null;
+          screenshot_path: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: "bug" | "feature" | "general" | "rating";
+          message?: string | null;
+          rating?: number | null;
+          page?: string | null;
+          app_version?: string | null;
+          user_agent?: string | null;
+          screenshot_path?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: "bug" | "feature" | "general" | "rating";
+          message?: string | null;
+          rating?: number | null;
+          page?: string | null;
+          app_version?: string | null;
+          user_agent?: string | null;
+          screenshot_path?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
+      analytics_events: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          event_name: string;
+          properties: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          event_name: string;
+          properties?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          event_name?: string;
+          properties?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+
+      crash_reports: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          message: string;
+          stack: string | null;
+          component_name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          message: string;
+          stack?: string | null;
+          component_name?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          message?: string;
+          stack?: string | null;
+          component_name?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -201,6 +300,7 @@ export interface Database {
           day_title: string;
           day_focus: string;
           started_at: string;
+          active_exercise_index: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -213,6 +313,7 @@ export interface Database {
           day_title: string;
           day_focus: string;
           started_at: string;
+          active_exercise_index?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -225,6 +326,7 @@ export interface Database {
           day_title?: string;
           day_focus?: string;
           started_at?: string;
+          active_exercise_index?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -584,6 +686,16 @@ export interface Database {
           user_id: string;
           auto_start_rest_timer: boolean;
           weight_unit: "lbs" | "kg";
+          timer_sound: boolean;
+          vibration: boolean;
+          default_rest_seconds: number;
+          show_exercise_guide_automatically: boolean;
+          dark_mode: boolean;
+          compact_mode: boolean;
+          larger_text: boolean;
+          workout_reminders: boolean;
+          weekly_summary: boolean;
+          streak_reminders: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -591,6 +703,16 @@ export interface Database {
           user_id: string;
           auto_start_rest_timer?: boolean;
           weight_unit?: "lbs" | "kg";
+          timer_sound?: boolean;
+          vibration?: boolean;
+          default_rest_seconds?: number;
+          show_exercise_guide_automatically?: boolean;
+          dark_mode?: boolean;
+          compact_mode?: boolean;
+          larger_text?: boolean;
+          workout_reminders?: boolean;
+          weekly_summary?: boolean;
+          streak_reminders?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -598,6 +720,16 @@ export interface Database {
           user_id?: string;
           auto_start_rest_timer?: boolean;
           weight_unit?: "lbs" | "kg";
+          timer_sound?: boolean;
+          vibration?: boolean;
+          default_rest_seconds?: number;
+          show_exercise_guide_automatically?: boolean;
+          dark_mode?: boolean;
+          compact_mode?: boolean;
+          larger_text?: boolean;
+          workout_reminders?: boolean;
+          weekly_summary?: boolean;
+          streak_reminders?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -791,6 +923,28 @@ export interface Database {
           order_index?: number;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      exercise_favorites: {
+        Row: {
+          id: string;
+          user_id: string;
+          exercise_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          exercise_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          exercise_id?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

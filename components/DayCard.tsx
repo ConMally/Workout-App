@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import type { WorkoutPlan } from "@/types/workout";
-import { hasSubstitutes } from "@/lib/exercise-substitutions";
+import type { Equipment } from "@/types/exercises";
+import ReplacementPicker from "@/components/exercises/ReplacementPicker";
 
 type TrainingDay = WorkoutPlan["weeklySchedule"][number];
 
@@ -7,10 +11,12 @@ interface DayCardProps {
   day: TrainingDay;
   onStartWorkout: () => void;
   startDisabled: boolean;
-  onSwapExercise: (exerciseIndex: number) => void;
+  availableEquipment?: Equipment[];
+  onReplaceExercise: (exerciseIndex: number, newName: string) => void;
 }
 
-export default function DayCard({ day, onStartWorkout, startDisabled, onSwapExercise }: DayCardProps) {
+export default function DayCard({ day, onStartWorkout, startDisabled, availableEquipment, onReplaceExercise }: DayCardProps) {
+  const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -80,15 +86,13 @@ export default function DayCard({ day, onStartWorkout, startDisabled, onSwapExer
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
                   {exercise.restSeconds}s rest
                 </span>
-                {hasSubstitutes(exercise.name) && (
-                  <button
-                    type="button"
-                    onClick={() => onSwapExercise(i)}
-                    className="rounded-full border border-slate-200 px-2.5 py-1 font-medium text-slate-500 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
-                  >
-                    Swap
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setReplacingIndex(i)}
+                  className="rounded-full border border-slate-200 px-2.5 py-1 font-medium text-slate-500 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
+                >
+                  Replace
+                </button>
               </div>
             </li>
           ))}
@@ -121,6 +125,19 @@ export default function DayCard({ day, onStartWorkout, startDisabled, onSwapExer
           Start Workout
         </button>
       </div>
+
+      {replacingIndex !== null && (
+        <ReplacementPicker
+          exerciseName={day.exercises[replacingIndex].name}
+          availableEquipment={availableEquipment}
+          excludeNames={day.exercises.map((e) => e.name)}
+          onSelect={(candidate) => {
+            onReplaceExercise(replacingIndex, candidate.exercise.name);
+            setReplacingIndex(null);
+          }}
+          onCancel={() => setReplacingIndex(null)}
+        />
+      )}
     </div>
   );
 }

@@ -27,6 +27,10 @@ export default function ExerciseProgressDetail({ exerciseName, history, weightUn
     .filter((p) => p.estimatedOneRepMax !== null)
     .map((p) => ({ label: formatDate(p.completedAt), value: p.estimatedOneRepMax as number }));
 
+  const weightChartPoints = stats.history
+    .filter((p) => p.weight !== null)
+    .map((p) => ({ label: formatDate(p.completedAt), value: p.weight as number }));
+
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-6">
       <button
@@ -66,6 +70,17 @@ export default function ExerciseProgressDetail({ exerciseName, history, weightUn
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estimated 1RM over time</p>
               <div className="mt-2">
                 <MiniLineChart points={chartPoints} ariaLabel={`Estimated one-rep max for ${exerciseName} over time`} />
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Weight progress</p>
+              <div className="mt-2">
+                <MiniLineChart
+                  points={weightChartPoints}
+                  unit={` ${weightUnit}`}
+                  ariaLabel={`Heaviest logged weight for ${exerciseName} over time`}
+                />
               </div>
             </div>
           </div>

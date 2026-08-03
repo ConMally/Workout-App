@@ -10,6 +10,7 @@ export const GoalEnum = z.enum([
 ]);
 
 export const ExperienceLevelEnum = z.enum(["beginner", "intermediate", "advanced"]);
+export type ExperienceLevel = z.infer<typeof ExperienceLevelEnum>;
 
 export const EquipmentEnum = z.enum([
   "bodyweight_only",
@@ -21,6 +22,7 @@ export const EquipmentEnum = z.enum([
   "cardio_machines",
   "full_gym",
 ]);
+export type Equipment = z.infer<typeof EquipmentEnum>;
 
 // What the onboarding form submits to /api/generate. All free-text fields
 // have a hard length cap so a single request can't blow up token usage.

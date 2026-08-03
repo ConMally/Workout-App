@@ -19,6 +19,11 @@ export interface Profile {
   experienceLevel: ExperienceLevel | null;
   weeklyTrainingTarget: number | null;
   onboardingCompleted: boolean;
+  // Phase 9: hidden admin-dashboard gate (checked server-side in
+  // app/admin/page.tsx) and the "never ask again" flag for the beta rating
+  // prompt (components/feedback/RatingPrompt.tsx).
+  isAdmin: boolean;
+  feedbackPromptDismissedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +34,7 @@ export interface ProfileUpdateInput {
   experienceLevel?: ExperienceLevel | null;
   weeklyTrainingTarget?: number | null;
   onboardingCompleted?: boolean;
+  feedbackPromptDismissedAt?: string | null;
 }
 
 export interface ProfileRepository {

@@ -89,6 +89,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
           className="h-4 w-4 rounded border-slate-300 accent-teal-600"
         />
         Onboarding completed
+        <span className="sr-only"> — uncheck to see the Getting Started checklist again on your Dashboard</span>
       </label>
 
       {state.status === "error" && state.message && (

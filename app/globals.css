@@ -1,7 +1,16 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: `dark:` utilities respond to a `.dark` class on
+   <html> (toggled by components/settings/ThemeEffect.tsx from the user's
+   stored appearance setting) instead of the OS prefers-color-scheme media
+   query, since dark mode here is a user preference, not a system mirror. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --animate-step-in: step-in 0.25s ease-out;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-scale-in: scale-in 0.18s ease-out;
+  --animate-sheet-up: sheet-up 0.22s ease-out;
 }
 
 @keyframes step-in {
@@ -15,12 +24,64 @@
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
 }
 
+:root.dark {
+  --background: #0b1220;
+  --foreground: #e2e8f0;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Larger-text appearance setting — scales every rem-based Tailwind size
+   uniformly across the whole app without touching each component. */
+:root.larger-text {
+  font-size: 112.5%;
+}
+
+.skeleton-shimmer {
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 400px 100%;
+  background-repeat: no-repeat;
+}
+
+:root.dark .skeleton-shimmer {
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
 }

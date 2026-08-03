@@ -8,6 +8,10 @@ import type { ExerciseNoteRepository } from "./exercise-note-repository";
 import type { SettingsRepository } from "./settings-repository";
 import type { SubstitutionRepository } from "./substitution-repository";
 import type { TemplateRepository } from "./template-repository";
+import type { ExerciseFavoriteRepository } from "./exercise-favorite-repository";
+import type { AnalyticsEventRepository } from "./analytics-event-repository";
+import type { FeedbackRepository } from "./feedback-repository";
+import type { CrashReportRepository } from "./crash-report-repository";
 
 // The full set of workout-data repositories the app needs, bundled
 // together so app/page.tsx (and anything else) can pick one bundle for
@@ -25,4 +29,8 @@ export interface Repositories {
   settings: SettingsRepository;
   substitutions: SubstitutionRepository;
   templates: TemplateRepository;
+  exerciseFavorites: ExerciseFavoriteRepository;
+  analyticsEvents: AnalyticsEventRepository;
+  feedback: FeedbackRepository;
+  crashReports: CrashReportRepository;
 }

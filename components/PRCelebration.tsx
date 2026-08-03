@@ -18,7 +18,7 @@ export default function PRCelebration({ events, onDismiss }: PRCelebrationProps)
   if (events.length === 0) return null;
 
   return (
-    <div className="motion-safe:animate-step-in rounded-2xl border border-teal-200 bg-teal-50 p-5">
+    <div role="status" className="motion-safe:animate-step-in rounded-2xl border border-teal-200 bg-teal-50 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-teal-900">

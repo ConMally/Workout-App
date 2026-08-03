@@ -10,13 +10,24 @@ interface DataErrorLike {
   code?: string;
 }
 
+const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please log in again.";
+
 const PATTERNS: { test: RegExp; message: string }[] = [
-  { test: /JWT|token is expired|invalid.*session|not authenticated/i, message: "Your session has expired. Please log in again." },
+  { test: /JWT|token is expired|invalid.*session|not authenticated/i, message: SESSION_EXPIRED_MESSAGE },
   { test: /permission denied|row-level security|RLS/i, message: "You don't have permission to view or change this. Try signing in again." },
   { test: /network|fetch failed|failed to fetch|ECONNREFUSED/i, message: "Couldn't reach the server. Check your connection and try again." },
   { test: /timeout/i, message: "That took too long. Please try again." },
   { test: /duplicate key|already exists|unique constraint/i, message: "That already exists — try refreshing and trying again." },
 ];
+
+// Lets callers show an obvious "Log in again" action next to the friendly
+// message rather than just displaying text and stranding the user (PART 7:
+// "never trap the user") — matched against the exact string
+// getFriendlyDataErrorMessage returns for this case, kept in this file so
+// the two never drift apart.
+export function isSessionExpiredMessage(message: string): boolean {
+  return message === SESSION_EXPIRED_MESSAGE;
+}
 
 // Postgres's unique_violation SQLSTATE. Used to distinguish "this exact
 // row was already written" (safe to treat as success on a retry of an

@@ -1,29 +1,65 @@
+"use client";
+
+import { useState } from "react";
 import type { WorkoutPlan } from "@/types/workout";
+import type { Equipment } from "@/types/exercises";
 import DayCard from "./DayCard";
 import InjuryWarning from "./InjuryWarning";
 import PlanSummary from "./PlanSummary";
+import PlanEditor from "./plan/PlanEditor";
+import EquipmentAdaptationDialog from "./plan/EquipmentAdaptationDialog";
+
+type TrainingDay = WorkoutPlan["weeklySchedule"][number];
 
 interface WorkoutPlanViewProps {
   plan: WorkoutPlan;
+  availableEquipment?: Equipment[];
   onRegenerate: () => void;
   onEditPreferences: () => void;
   onStartOver: () => void;
   onStartWorkout: (dayIndex: number) => void;
-  onSwapExercise: (dayIndex: number, exerciseIndex: number) => void;
+  onReplaceExercise: (dayIndex: number, exerciseIndex: number, newName: string) => void;
+  onSavePlanEdits: (weeklySchedule: TrainingDay[]) => void;
+  onApplyEquipmentReplacements: (replacements: { exerciseName: string; newName: string }[]) => void;
   onSaveAsTemplate: () => void;
   hasActiveWorkout: boolean;
 }
 
 export default function WorkoutPlanView({
   plan,
+  availableEquipment,
   onRegenerate,
   onEditPreferences,
   onStartOver,
   onStartWorkout,
-  onSwapExercise,
+  onReplaceExercise,
+  onSavePlanEdits,
+  onApplyEquipmentReplacements,
   onSaveAsTemplate,
   hasActiveWorkout,
 }: WorkoutPlanViewProps) {
+  const [showPlanEditor, setShowPlanEditor] = useState(false);
+  const [showEquipmentDialog, setShowEquipmentDialog] = useState(false);
+
+  // PlanEditor fills the whole view (it can contain many days/exercises)
+  // rather than living in an overlay modal like the smaller pickers below.
+  if (showPlanEditor) {
+    return (
+      <div className="motion-safe:animate-step-in flex flex-col gap-6">
+        <PlanEditor
+          plan={plan}
+          availableEquipment={availableEquipment}
+          submitting={false}
+          onSave={(weeklySchedule) => {
+            onSavePlanEdits(weeklySchedule);
+            setShowPlanEditor(false);
+          }}
+          onCancel={() => setShowPlanEditor(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -46,6 +82,18 @@ export default function WorkoutPlanView({
               className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
               Save as Template
+            </button>
+            <button
+              onClick={() => setShowPlanEditor(true)}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Edit Plan
+            </button>
+            <button
+              onClick={() => setShowEquipmentDialog(true)}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Change Equipment
             </button>
             <button
               onClick={onEditPreferences}
@@ -81,7 +129,8 @@ export default function WorkoutPlanView({
             day={day}
             onStartWorkout={() => onStartWorkout(i)}
             startDisabled={hasActiveWorkout}
-            onSwapExercise={(exerciseIndex) => onSwapExercise(i, exerciseIndex)}
+            availableEquipment={availableEquipment}
+            onReplaceExercise={(exerciseIndex, newName) => onReplaceExercise(i, exerciseIndex, newName)}
           />
         ))}
       </div>
@@ -119,6 +168,17 @@ export default function WorkoutPlanView({
           ))}
         </ul>
       </div>
+
+      {showEquipmentDialog && (
+        <EquipmentAdaptationDialog
+          plan={plan}
+          onApply={(replacements) => {
+            onApplyEquipmentReplacements(replacements);
+            setShowEquipmentDialog(false);
+          }}
+          onCancel={() => setShowEquipmentDialog(false)}
+        />
+      )}
     </div>
   );
 }

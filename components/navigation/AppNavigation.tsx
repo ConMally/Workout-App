@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 
-export type Tab = "dashboard" | "plan" | "workout" | "history" | "insights" | "templates" | "settings" | "account";
+export type Tab =
+  | "dashboard"
+  | "plan"
+  | "workout"
+  | "history"
+  | "insights"
+  | "templates"
+  | "exercises"
+  | "settings"
+  | "account";
 
 interface AppNavigationProps {
   activeTab: Tab;
@@ -21,6 +30,7 @@ const BASE_TABS: { id: Tab; label: string }[] = [
   { id: "history", label: "History" },
   { id: "insights", label: "Insights" },
   { id: "templates", label: "Templates" },
+  { id: "exercises", label: "Exercises" },
   { id: "settings", label: "Settings" },
 ];
 
@@ -28,9 +38,9 @@ const ACTIVE_WORKOUT_TAB: { id: Tab; label: string } = { id: "workout", label: "
 const ACCOUNT_TAB: { id: Tab; label: string } = { id: "account", label: "Account" };
 
 export default function AppNavigation({ activeTab, hasActiveWorkout, onTabChange, variant = "app" }: AppNavigationProps) {
-  // Order: Dashboard, Plan, (Active Workout), History, Insights, Templates, Settings, Account.
+  // Order: Dashboard, Plan, (Active Workout), History, Insights, Templates, Exercises, Settings, Account.
   const baseWithWorkout = hasActiveWorkout
-    ? [BASE_TABS[0], BASE_TABS[1], ACTIVE_WORKOUT_TAB, BASE_TABS[2], BASE_TABS[3], BASE_TABS[4], BASE_TABS[5]]
+    ? [BASE_TABS[0], BASE_TABS[1], ACTIVE_WORKOUT_TAB, ...BASE_TABS.slice(2)]
     : BASE_TABS;
   const tabs = [...baseWithWorkout, ACCOUNT_TAB];
 

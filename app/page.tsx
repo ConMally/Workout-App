@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation";
 import OnboardingForm, { type OnboardingFormValues } from "@/components/OnboardingForm";
 import WorkoutPlanView from "@/components/WorkoutPlanView";
 import LoadingState from "@/components/LoadingState";
+import { SkeletonBlock } from "@/components/ui/Skeleton";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
 import Disclaimer from "@/components/Disclaimer";
+import OfflineBanner from "@/components/OfflineBanner";
+import AppErrorBoundary from "@/components/AppErrorBoundary";
 import type { Tab } from "@/components/navigation/AppNavigation";
 import ActiveWorkoutView from "@/components/workout/ActiveWorkout";
 import PostWorkoutCheckIn from "@/components/workout/PostWorkoutCheckIn";
@@ -15,6 +19,7 @@ import WorkoutHistory from "@/components/history/WorkoutHistory";
 import Dashboard from "@/components/dashboard/Dashboard";
 import InsightsPage from "@/components/insights/InsightsPage";
 import SettingsPanel from "@/components/settings/SettingsPanel";
+import ThemeEffect from "@/components/settings/ThemeEffect";
 import ExerciseProgressDetail from "@/components/exercises/ExerciseProgressDetail";
 import AppHeader from "@/components/layout/AppHeader";
 import MigrationBanner from "@/components/migration/MigrationBanner";
@@ -23,7 +28,7 @@ import SaveAsTemplateDialog from "@/components/templates/SaveAsTemplateDialog";
 import UnsavedChangesDialog from "@/components/templates/UnsavedChangesDialog";
 import type { TemplateEditorSubmitInput } from "@/components/templates/TemplateEditor";
 import { useRepositories } from "@/lib/repositories/useRepositories";
-import { getFriendlyDataErrorMessage, isUniqueViolation } from "@/lib/supabase/data-errors";
+import { getFriendlyDataErrorMessage, isSessionExpiredMessage, isUniqueViolation } from "@/lib/supabase/data-errors";
 import { createClient } from "@/lib/supabase/client";
 import { createSupabaseProfileRepository } from "@/lib/repositories/supabase/profile-repository";
 import type { WorkoutPlan } from "@/types/workout";
@@ -38,12 +43,16 @@ import {
   type CompletedWorkout,
   type PersonalRecordEvent,
   type Readiness,
-  type WeightUnit,
 } from "@/types/workout-log";
 import { type SubstitutionHistory } from "@/lib/storage";
 import { computeDurationSeconds, createActiveWorkout } from "@/lib/workout-log";
 import { detectPersonalRecords } from "@/lib/progression";
-import { getSubstitute } from "@/lib/exercise-substitutions";
+import ExerciseLibraryBrowser from "@/components/exercises/ExerciseLibraryBrowser";
+import { useTrackEvent } from "@/lib/analytics-events/useTrackEvent";
+import FeedbackButton from "@/components/feedback/FeedbackButton";
+import RatingPrompt from "@/components/feedback/RatingPrompt";
+import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import { APP_VERSION } from "@/lib/version";
 
 type ViewState =
   | { status: "form" }
@@ -70,13 +79,26 @@ const DEFAULT_FORM_VALUES: OnboardingFormValues = {
 // documented gap for a future phase.
 const MAX_HISTORY_FOR_STATS = 200;
 
-// Not part of the Repositories bundle — weeklyTrainingTarget lives on
-// profiles, an account-level concept with no local/signed-out equivalent
-// (see lib/repositories/profile-repository.ts). Local mode simply has no
-// target to show.
-async function fetchWeeklyTarget(userId: string): Promise<number | null> {
+// Not part of the Repositories bundle — these live on profiles, an
+// account-level concept with no local/signed-out equivalent (see
+// lib/repositories/profile-repository.ts). One fetch here covers
+// weeklyTrainingTarget (existing) plus the Phase 9 onboarding/feedback-
+// prompt fields, rather than a second round trip for each.
+interface ProfileExtras {
+  weeklyTarget: number | null;
+  onboardingCompleted: boolean;
+  feedbackPromptDismissedAt: string | null;
+  accountCreatedAt: string | null;
+}
+
+async function fetchProfileExtras(userId: string): Promise<ProfileExtras> {
   const profile = await createSupabaseProfileRepository(createClient()).getProfile(userId);
-  return profile?.weeklyTrainingTarget ?? null;
+  return {
+    weeklyTarget: profile?.weeklyTrainingTarget ?? null,
+    onboardingCompleted: profile?.onboardingCompleted ?? true, // fail safe: never show onboarding on a load error
+    feedbackPromptDismissedAt: profile?.feedbackPromptDismissedAt ?? null,
+    accountCreatedAt: profile?.createdAt ?? null,
+  };
 }
 
 // Tags a repository call with the domain it belongs to so a failure in the
@@ -99,6 +121,7 @@ async function loadDomain<T>(domain: string, promise: Promise<T>): Promise<T> {
 export default function Home() {
   const router = useRouter();
   const reposState = useRepositories();
+  const trackEvent = useTrackEvent();
 
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -119,11 +142,19 @@ export default function Home() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [weeklyTarget, setWeeklyTarget] = useState<number | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [feedbackPromptDismissedAt, setFeedbackPromptDismissedAt] = useState<string | null>(null);
+  const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
+  const [visitedExercisesTab, setVisitedExercisesTab] = useState(false);
+  // Captured once at mount (not recomputed on every render) purely to
+  // evaluate the rating prompt's "7 days of use" trigger below.
+  const [nowSnapshot] = useState(() => Date.now());
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [saveTemplateError, setSaveTemplateError] = useState<string | null>(null);
   const [templateUseSuccess, setTemplateUseSuccess] = useState<string | null>(null);
+  const [favoriteExerciseIds, setFavoriteExerciseIds] = useState<Set<string>>(new Set());
   // Tracks whether the Templates tab's create/edit form has unsaved
   // changes, so switching to a different tab mid-edit can warn first —
   // TemplateEditor's own Cancel button and the beforeunload fallback
@@ -155,7 +186,7 @@ export default function Home() {
     // as every other domain in the Promise.all — reposState.status === "ready"
     // now always means a signed-in cloud session (this app has no
     // local/guest mode), so this always runs.
-    const weeklyTargetPromise = fetchWeeklyTarget(userId);
+    const profileExtrasPromise = fetchProfileExtras(userId);
     let cancelled = false;
 
     setIsLoadingData(true);
@@ -170,8 +201,9 @@ export default function Home() {
           loadedSettings,
           loadedGoals,
           loadedSubstitutions,
-          loadedWeeklyTarget,
+          profileExtras,
           loadedTemplates,
+          loadedFavorites,
         ] = await Promise.all([
           loadDomain("plan", repositories.plan.getActivePlan(userId)),
           loadDomain("activeWorkout", repositories.activeWorkout.getActiveWorkout(userId)),
@@ -179,8 +211,9 @@ export default function Home() {
           loadDomain("settings", repositories.settings.getSettings(userId)),
           loadDomain("goals", repositories.goals.listGoals(userId)),
           loadDomain("substitutions", repositories.substitutions.getSubstitutionHistory(userId)),
-          loadDomain("weeklyTarget", weeklyTargetPromise),
+          loadDomain("profileExtras", profileExtrasPromise),
           loadDomain("templates", repositories.templates.getTemplates(userId)),
+          loadDomain("exerciseFavorites", repositories.exerciseFavorites.listFavorites(userId)),
         ]);
 
         if (cancelled) return;
@@ -201,18 +234,22 @@ export default function Home() {
         setSettings(loadedSettings ?? DEFAULT_SETTINGS);
         setGoals(loadedGoals);
         setSubstitutionHistory(loadedSubstitutions);
-        setWeeklyTarget(loadedWeeklyTarget);
+        setWeeklyTarget(profileExtras.weeklyTarget);
         setTemplates(loadedTemplates);
+        setFavoriteExerciseIds(new Set(loadedFavorites.map((f) => f.exerciseId)));
         setSelectedHistoryId(null);
         setSelectedExercise(null);
         setRecentPRs([]);
+        setShowOnboarding(!profileExtras.onboardingCompleted);
+        setFeedbackPromptDismissedAt(profileExtras.feedbackPromptDismissedAt);
+        setAccountCreatedAt(profileExtras.accountCreatedAt);
 
         let nextTab: Tab = savedActiveWorkout ? "workout" : savedPlan ? "dashboard" : "plan";
 
         if (!hasAppliedTabParam.current) {
           hasAppliedTabParam.current = true;
           const tabParam = new URLSearchParams(window.location.search).get("tab");
-          const linkableTabs: Tab[] = ["dashboard", "plan", "history", "insights", "templates", "settings"];
+          const linkableTabs: Tab[] = ["dashboard", "plan", "history", "insights", "templates", "exercises", "settings"];
           if (tabParam && (linkableTabs as string[]).includes(tabParam)) {
             nextTab = tabParam as Tab;
           } else if (tabParam === "workout" && savedActiveWorkout) {
@@ -270,6 +307,11 @@ export default function Home() {
         setView({ status: "plan", plan: data.plan });
         setSubstitutionHistory({});
         runMutation(() => repositories.substitutions.clearSubstitutionHistory(userId));
+        trackEvent("workout_generated", {
+          daysPerWeek: values.daysPerWeek,
+          goal: values.goal,
+          isFirstPlan,
+        });
         if (isFirstPlan) setActiveTab("dashboard");
 
         runMutation(() =>
@@ -330,6 +372,7 @@ export default function Home() {
     const workout = createActiveWorkout(day, dayIndex);
     setActiveWorkout(workout);
     runMutation(() => repositories.activeWorkout.createActiveWorkout(userId, workout));
+    trackEvent("workout_started", { exerciseCount: workout.exercises.length });
     setActiveTab("workout");
   }
 
@@ -341,22 +384,19 @@ export default function Home() {
     runMutation(() => repositories.activeWorkout.saveActiveWorkout(userId, workout));
   }
 
-  function handleToggleAutoStart(enabled: boolean) {
+  // Single generic settings mutator (Phase 7) — replaces the old one-handler-
+  // per-field pattern (handleToggleAutoStart/handleSetWeightUnit) now that
+  // Settings has ~12 fields; every toggle/select in SettingsPanel and the
+  // rest-timer auto-start toggle surfaced from ActiveWorkoutView both funnel
+  // through this one optimistic-write path.
+  function handleUpdateSettings(patch: Partial<AppSettings>) {
     if (reposState.status !== "ready") return;
     const { repositories, userId } = reposState;
 
-    const next = { ...settings, autoStartRestTimer: enabled };
+    const next = { ...settings, ...patch };
     setSettings(next);
     runMutation(() => repositories.settings.saveSettings(userId, next));
-  }
-
-  function handleSetWeightUnit(unit: WeightUnit) {
-    if (reposState.status !== "ready") return;
-    const { repositories, userId } = reposState;
-
-    const next = { ...settings, weightUnit: unit };
-    setSettings(next);
-    runMutation(() => repositories.settings.saveSettings(userId, next));
+    trackEvent("settings_changed", { fields: Object.keys(patch).join(",") });
   }
 
   // "Finish Workout" no longer writes history directly — it stages a draft
@@ -430,6 +470,11 @@ export default function Home() {
     setActiveWorkout(null);
     setPendingCompletion(null);
     setRecentPRs(prEvents);
+    trackEvent("workout_completed", {
+      exerciseCount: completed.exercises.length,
+      completedSetCount: completed.exercises.reduce((sum, e) => sum + e.sets.filter((s) => s.completed).length, 0),
+      prCount: prEvents.length,
+    });
     setActiveTab("history");
   }
 
@@ -453,7 +498,11 @@ export default function Home() {
     if (activeTab === "workout") setActiveTab("dashboard");
   }
 
-  function handleSwapExercise(dayIndex: number, exerciseIndex: number) {
+  // Replaces the old random getSubstitute() swap: newName now comes from
+  // the user's pick in the ranked ReplacementPicker (lib/exercises/replacement.ts)
+  // instead of being chosen for them. Persistence and substitutionHistory
+  // exclude-list bookkeeping are unchanged from the prior swap flow.
+  function handleReplaceExercise(dayIndex: number, exerciseIndex: number, newName: string) {
     if (view.status !== "plan" || reposState.status !== "ready") return;
     const day = view.plan.weeklySchedule[dayIndex];
     const exercise = day?.exercises[exerciseIndex];
@@ -461,17 +510,12 @@ export default function Home() {
 
     const { repositories, userId } = reposState;
 
-    const key = `${dayIndex}:${exerciseIndex}`;
-    const excludeNames = substitutionHistory[key] ?? [exercise.name];
-    const replacement = getSubstitute(exercise.name, excludeNames);
-    if (!replacement) return;
-
     const nextWeeklySchedule = view.plan.weeklySchedule.map((d, di) =>
       di !== dayIndex
         ? d
         : {
             ...d,
-            exercises: d.exercises.map((ex, ei) => (ei !== exerciseIndex ? ex : { ...ex, name: replacement })),
+            exercises: d.exercises.map((ex, ei) => (ei !== exerciseIndex ? ex : { ...ex, name: newName })),
           }
     );
     const nextPlan = { ...view.plan, weeklySchedule: nextWeeklySchedule };
@@ -485,9 +529,87 @@ export default function Home() {
       })
     );
 
-    const nextSubstitutionHistory = { ...substitutionHistory, [key]: [...excludeNames, replacement] };
+    const key = `${dayIndex}:${exerciseIndex}`;
+    const excludeNames = substitutionHistory[key] ?? [exercise.name];
+    const nextSubstitutionHistory = { ...substitutionHistory, [key]: [...excludeNames, newName] };
     setSubstitutionHistory(nextSubstitutionHistory);
     runMutation(() => repositories.substitutions.saveSubstitutionHistory(userId, nextSubstitutionHistory));
+    trackEvent("exercise_replaced");
+  }
+
+  // PART 4: full plan edits (add/remove/duplicate/move exercises and days,
+  // renames, sets/reps/rest/notes) come back as a whole new weeklySchedule
+  // from PlanEditor and persist through the same updateActivePlan call
+  // every other plan mutation in this file uses — no new repository method.
+  function handleSavePlanEdits(weeklySchedule: WorkoutPlan["weeklySchedule"]) {
+    if (view.status !== "plan" || reposState.status !== "ready") return;
+    const { repositories, userId } = reposState;
+
+    const nextPlan = { ...view.plan, weeklySchedule };
+    setView({ status: "plan", plan: nextPlan });
+    runMutation(() =>
+      repositories.plan.updateActivePlan(userId, {
+        preferences: formValues,
+        plan: nextPlan,
+        savedAt: new Date().toISOString(),
+      })
+    );
+    trackEvent("workout_edited", { dayCount: weeklySchedule.length });
+  }
+
+  // PART 6: applies the accepted equipment-gap replacements (by exercise
+  // name) across every day of the plan at once.
+  function handleApplyEquipmentReplacements(replacements: { exerciseName: string; newName: string }[]) {
+    if (view.status !== "plan" || reposState.status !== "ready" || replacements.length === 0) return;
+    const { repositories, userId } = reposState;
+
+    const nameMap = new Map(replacements.map((r) => [r.exerciseName, r.newName]));
+    const nextWeeklySchedule = view.plan.weeklySchedule.map((day) => ({
+      ...day,
+      exercises: day.exercises.map((ex) => (nameMap.has(ex.name) ? { ...ex, name: nameMap.get(ex.name)! } : ex)),
+    }));
+    const nextPlan = { ...view.plan, weeklySchedule: nextWeeklySchedule };
+
+    setView({ status: "plan", plan: nextPlan });
+    runMutation(() =>
+      repositories.plan.updateActivePlan(userId, {
+        preferences: formValues,
+        plan: nextPlan,
+        savedAt: new Date().toISOString(),
+      })
+    );
+  }
+
+  // PART 8: optimistic favorite toggle, same rollback-on-failure pattern as
+  // handleToggleFavorite for templates.
+  async function handleToggleExerciseFavorite(exerciseId: string) {
+    if (reposState.status !== "ready") return;
+    const { repositories, userId } = reposState;
+
+    const wasFavorite = favoriteExerciseIds.has(exerciseId);
+    setFavoriteExerciseIds((prev) => {
+      const next = new Set(prev);
+      if (wasFavorite) next.delete(exerciseId);
+      else next.add(exerciseId);
+      return next;
+    });
+
+    try {
+      if (wasFavorite) {
+        await repositories.exerciseFavorites.removeFavorite(userId, exerciseId);
+      } else {
+        await repositories.exerciseFavorites.addFavorite(userId, exerciseId);
+        trackEvent("exercise_favorited");
+      }
+    } catch (error) {
+      setFavoriteExerciseIds((prev) => {
+        const next = new Set(prev);
+        if (wasFavorite) next.add(exerciseId);
+        else next.delete(exerciseId);
+        return next;
+      });
+      setSaveError(getFriendlyDataErrorMessage(error));
+    }
   }
 
   function handleCreateGoal(goal: Goal) {
@@ -526,6 +648,7 @@ export default function Home() {
     const template = buildTemplate(input);
     await repositories.templates.createTemplate(userId, template);
     setTemplates((prev) => [toTemplateSummary(template), ...prev]);
+    trackEvent("template_created", { dayCount: template.days.length, templateName: template.name });
   }
 
   async function handleUpdateTemplate(template: WorkoutTemplate) {
@@ -603,6 +726,7 @@ export default function Home() {
     setHasGeneratedBefore(true);
     setSubstitutionHistory({});
     runMutation(() => repositories.substitutions.clearSubstitutionHistory(userId));
+    trackEvent("template_used", { templateName: summary?.name ?? "unknown" });
     setActiveTab("plan");
     setTemplateUseSuccess(summary ? `Started "${summary.name}".` : "Plan started from template.");
   }
@@ -651,24 +775,40 @@ export default function Home() {
   if (reposState.status === "loading" || reposState.status === "unauthenticated" || isLoadingData) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
-        <LoadingState />
+        <div role="status" aria-label="Loading" className="flex flex-col gap-3">
+          <SkeletonBlock className="mx-auto h-8 w-72" />
+          <SkeletonBlock className="h-11 w-full rounded-xl" />
+        </div>
+        <DashboardSkeleton />
       </main>
     );
   }
 
   if (loadError) {
+    const sessionExpired = isSessionExpiredMessage(loadError);
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
         <ErrorState
           title="Couldn't load your data"
           message={loadError}
-          onRetry={() => setReloadNonce((n) => n + 1)}
+          retryLabel={sessionExpired ? "Log in again" : "Try again"}
+          onRetry={
+            sessionExpired
+              ? () => router.push(`/login?redirectTo=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`)
+              : () => setReloadNonce((n) => n + 1)
+          }
         />
       </main>
     );
   }
 
   const currentPlan = view.status === "plan" ? view.plan : null;
+
+  // PART 5: "after 5 completed workouts or 7 days of use" — either
+  // condition triggers it, and it never shows once dismissed/rated (see
+  // feedbackPromptDismissedAt, persisted via handleDismissRatingPrompt).
+  const accountAgeDays = accountCreatedAt ? (nowSnapshot - new Date(accountCreatedAt).getTime()) / (24 * 60 * 60 * 1000) : 0;
+  const shouldShowRatingPrompt = feedbackPromptDismissedAt === null && (history.length >= 5 || accountAgeDays >= 7);
 
   // Switching away from a dirty Templates editor without saving loses
   // whatever's currently unsaved — same warning TemplateEditor's own
@@ -681,22 +821,84 @@ export default function Home() {
       return;
     }
     if (nextTab !== "plan") setTemplateUseSuccess(null);
+    if (nextTab === "exercises") setVisitedExercisesTab(true);
     setActiveTab(nextTab);
   }
 
+  // PART 1: called when the user finishes or skips the onboarding checklist
+  // — either way it's permanent (profiles.onboarding_completed), so it
+  // never reappears. Uses the profile repository directly (not the
+  // Repositories bundle) since onboarding/profile state has always lived
+  // there — see fetchProfileExtras above and app/account's ProfileForm.
+  function handleCompleteOnboarding() {
+    if (reposState.status !== "ready") return;
+    setShowOnboarding(false);
+    createSupabaseProfileRepository(createClient())
+      .upsertProfile(reposState.userId, { onboardingCompleted: true })
+      .catch(() => {
+        // Best-effort — worst case onboarding reappears next session, which
+        // is a minor annoyance, not a broken state.
+      });
+  }
+
+  // PART 5: "Never ask again if dismissed" — recorded permanently the same
+  // way as onboarding completion, whether the user rated or explicitly
+  // dismissed the prompt.
+  function handleDismissRatingPrompt() {
+    if (reposState.status !== "ready") return;
+    const dismissedAt = new Date().toISOString();
+    setFeedbackPromptDismissedAt(dismissedAt);
+    createSupabaseProfileRepository(createClient())
+      .upsertProfile(reposState.userId, { feedbackPromptDismissedAt: dismissedAt })
+      .catch(() => {});
+  }
+
+  async function handleSubmitRating(rating: number, comment: string) {
+    if (reposState.status !== "ready") return;
+    const { repositories, userId } = reposState;
+
+    await repositories.feedback.submitFeedback(userId, {
+      type: "rating",
+      message: comment.trim() || null,
+      rating,
+      page: activeTab,
+      appVersion: APP_VERSION,
+      userAgent: navigator.userAgent,
+      screenshotPath: null,
+    });
+    handleDismissRatingPrompt();
+  }
+
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
+    <main
+      className={`mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 sm:px-6 ${
+        settings.compactMode ? "gap-4 py-5 sm:gap-5 sm:py-7" : "gap-6 py-8 sm:gap-8 sm:py-12"
+      }`}
+    >
+      <ThemeEffect settings={settings} />
       <AppHeader activeTab={activeTab} onTabChange={handleTabChange} hasActiveWorkout={activeWorkout !== null} variant="app" />
 
       <Disclaimer />
+      <OfflineBanner />
       <MigrationBanner />
 
       {saveError && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <p>{saveError}</p>
+        <div role="alert" className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          <div className="flex flex-col items-start gap-1.5">
+            <p>{saveError}</p>
+            {isSessionExpiredMessage(saveError) && (
+              <button
+                type="button"
+                onClick={() => router.push(`/login?redirectTo=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`)}
+                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+              >
+                Log in again
+              </button>
+            )}
+          </div>
           <button
             onClick={() => setSaveError(null)}
-            className="shrink-0 rounded-md px-1.5 py-0.5 text-red-600 transition hover:bg-red-100"
+            className="shrink-0 rounded-md px-1.5 py-0.5 text-red-600 transition hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900/40"
             aria-label="Dismiss"
           >
             ✕
@@ -717,6 +919,14 @@ export default function Home() {
         </div>
       )}
 
+      <AppErrorBoundary
+        key={selectedExercise ? "exercise-progress" : activeTab}
+        componentName={selectedExercise ? "ExerciseProgressDetail" : activeTab}
+        onReturnHome={() => {
+          setSelectedExercise(null);
+          setActiveTab("dashboard");
+        }}
+      >
       {selectedExercise ? (
         <ExerciseProgressDetail
           exerciseName={selectedExercise}
@@ -726,12 +936,27 @@ export default function Home() {
         />
       ) : (
         <>
+          {activeTab === "dashboard" && showOnboarding && (
+            <OnboardingChecklist
+              hasGeneratedPlan={hasGeneratedBefore}
+              hasStartedWorkout={activeWorkout !== null || history.length > 0}
+              hasLoggedSet={activeWorkout?.exercises.some((e) => e.sets.some((s) => s.completed)) || history.length > 0}
+              hasViewedProgress={history.length > 0}
+              hasVisitedLibrary={visitedExercisesTab}
+              onNavigate={handleTabChange}
+              onSkip={handleCompleteOnboarding}
+              onAllStepsComplete={handleCompleteOnboarding}
+            />
+          )}
+
           {activeTab === "dashboard" && (
             <Dashboard
               plan={currentPlan}
               activeWorkout={activeWorkout}
               history={history}
               goals={goals}
+              substitutionHistory={substitutionHistory}
+              weightUnit={settings.weightUnit}
               weeklyTarget={weeklyTarget}
               onStartWorkout={handleStartWorkout}
               onResumeWorkout={() => setActiveTab("workout")}
@@ -779,11 +1004,14 @@ export default function Home() {
               {view.status === "plan" && (
                 <WorkoutPlanView
                   plan={view.plan}
+                  availableEquipment={formValues.equipment}
                   onRegenerate={() => generatePlan(formValues)}
                   onEditPreferences={() => setView({ status: "form" })}
                   onStartOver={handleStartOver}
                   onStartWorkout={handleStartWorkout}
-                  onSwapExercise={handleSwapExercise}
+                  onReplaceExercise={handleReplaceExercise}
+                  onSavePlanEdits={handleSavePlanEdits}
+                  onApplyEquipmentReplacements={handleApplyEquipmentReplacements}
                   onSaveAsTemplate={handleOpenSaveAsTemplate}
                   hasActiveWorkout={activeWorkout !== null}
                 />
@@ -801,7 +1029,7 @@ export default function Home() {
                   history={history}
                   settings={settings}
                   onUpdateWorkout={handleUpdateActiveWorkout}
-                  onToggleAutoStart={handleToggleAutoStart}
+                  onToggleAutoStart={(enabled) => handleUpdateSettings({ autoStartRestTimer: enabled })}
                   onFinish={handleFinishWorkout}
                   onDiscard={handleDiscardWorkout}
                   onSelectExercise={setSelectedExercise}
@@ -852,6 +1080,15 @@ export default function Home() {
             />
           )}
 
+          {activeTab === "exercises" && (
+            <ExerciseLibraryBrowser
+              history={history}
+              weightUnit={settings.weightUnit}
+              favoriteIds={favoriteExerciseIds}
+              onToggleFavorite={handleToggleExerciseFavorite}
+            />
+          )}
+
           {showSaveAsTemplate && (
             <SaveAsTemplateDialog
               saving={savingTemplate}
@@ -876,12 +1113,18 @@ export default function Home() {
             <SettingsPanel
               settings={settings}
               hasActiveWorkout={activeWorkout !== null}
-              onToggleAutoStart={handleToggleAutoStart}
-              onSetWeightUnit={handleSetWeightUnit}
+              onUpdateSettings={handleUpdateSettings}
               onClearActiveWorkout={handleClearActiveWorkoutFromSettings}
             />
           )}
         </>
+      )}
+      </AppErrorBoundary>
+
+      <FeedbackButton currentPage={activeTab} />
+
+      {shouldShowRatingPrompt && activeTab === "dashboard" && (
+        <RatingPrompt onSubmit={handleSubmitRating} onDismiss={handleDismissRatingPrompt} />
       )}
     </main>
   );

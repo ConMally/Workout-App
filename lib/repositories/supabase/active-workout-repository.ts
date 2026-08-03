@@ -22,6 +22,7 @@ function toActiveWorkout(row: WorkoutRowWithChildren): ActiveWorkout {
     dayLabel: row.day_label,
     dayTitle: row.day_title,
     dayFocus: row.day_focus,
+    activeExerciseIndex: row.active_exercise_index,
     exercises: exercises.map((exercise) => ({
       name: exercise.name,
       targetSets: exercise.target_sets,
@@ -119,6 +120,7 @@ export function createSupabaseActiveWorkoutRepository(client: SupabaseClient<Dat
         day_title: workout.dayTitle,
         day_focus: workout.dayFocus,
         started_at: workout.startedAt,
+        active_exercise_index: workout.activeExerciseIndex,
       });
 
       if (insertError) throw insertError;
@@ -145,6 +147,7 @@ export function createSupabaseActiveWorkoutRepository(client: SupabaseClient<Dat
           day_title: workout.dayTitle,
           day_focus: workout.dayFocus,
           started_at: workout.startedAt,
+          active_exercise_index: workout.activeExerciseIndex,
         })
         .eq("id", workout.id)
         .eq("user_id", userId);

@@ -11,6 +11,10 @@ import { createSupabaseExerciseNoteRepository } from "./exercise-note-repository
 import { createSupabaseSettingsRepository } from "./settings-repository";
 import { createSupabaseSubstitutionRepository } from "./substitution-repository";
 import { createSupabaseTemplateRepository } from "./template-repository";
+import { createSupabaseExerciseFavoriteRepository } from "./exercise-favorite-repository";
+import { createSupabaseAnalyticsEventRepository } from "./analytics-event-repository";
+import { createSupabaseFeedbackRepository } from "./feedback-repository";
+import { createSupabaseCrashReportRepository } from "./crash-report-repository";
 
 export function createSupabaseRepositories(client: SupabaseClient<Database>): Repositories {
   return {
@@ -24,5 +28,9 @@ export function createSupabaseRepositories(client: SupabaseClient<Database>): Re
     settings: createSupabaseSettingsRepository(client),
     substitutions: createSupabaseSubstitutionRepository(client),
     templates: createSupabaseTemplateRepository(client),
+    exerciseFavorites: createSupabaseExerciseFavoriteRepository(client),
+    analyticsEvents: createSupabaseAnalyticsEventRepository(client),
+    feedback: createSupabaseFeedbackRepository(client),
+    crashReports: createSupabaseCrashReportRepository(client),
   };
 }

@@ -19,6 +19,8 @@ function toProfile(row: ProfileRow): Profile {
     experienceLevel: row.experience_level,
     weeklyTrainingTarget: row.weekly_training_target,
     onboardingCompleted: row.onboarding_completed,
+    isAdmin: row.is_admin,
+    feedbackPromptDismissedAt: row.feedback_prompt_dismissed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -42,6 +44,7 @@ export function createSupabaseProfileRepository(client: SupabaseClient<Database>
           ...(input.experienceLevel !== undefined && { experience_level: input.experienceLevel }),
           ...(input.weeklyTrainingTarget !== undefined && { weekly_training_target: input.weeklyTrainingTarget }),
           ...(input.onboardingCompleted !== undefined && { onboarding_completed: input.onboardingCompleted }),
+          ...(input.feedbackPromptDismissedAt !== undefined && { feedback_prompt_dismissed_at: input.feedbackPromptDismissedAt }),
         })
         .select("*")
         .single();

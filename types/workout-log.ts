@@ -33,6 +33,11 @@ export const ActiveWorkoutSchema = z.object({
   dayTitle: z.string(),
   dayFocus: z.string(),
   exercises: z.array(LoggedExerciseSchema).min(1),
+  // Which exercise the focused active-workout UI currently shows (Phase
+  // 6.1). Nullable/defaulted so workouts started before this field existed
+  // still parse — see lib/workout-log.ts#resolveActiveExerciseIndex for the
+  // fallback when this is null or out of range.
+  activeExerciseIndex: z.number().int().min(0).nullable().default(null),
 });
 export type ActiveWorkout = z.infer<typeof ActiveWorkoutSchema>;
 
@@ -66,15 +71,43 @@ export type CompletedWorkout = z.infer<typeof CompletedWorkoutSchema>;
 export const WeightUnitEnum = z.enum(["lbs", "kg"]);
 export type WeightUnit = z.infer<typeof WeightUnitEnum>;
 
+// Phase 7: personalization. Every new field is defaulted so settings rows
+// saved before this phase (locally or in Supabase) still parse — nothing
+// here is a breaking storage-version bump, same convention as
+// CompletedWorkoutSchema#readiness above.
 export const AppSettingsSchema = z.object({
   autoStartRestTimer: z.boolean(),
   weightUnit: WeightUnitEnum.default("lbs"),
+  // Workout
+  timerSound: z.boolean().default(true),
+  vibration: z.boolean().default(true),
+  defaultRestSeconds: z.number().int().min(0).max(600).default(90),
+  showExerciseGuideAutomatically: z.boolean().default(true),
+  // Appearance
+  darkMode: z.boolean().default(false),
+  compactMode: z.boolean().default(false),
+  largerText: z.boolean().default(false),
+  // Notifications — preferences only; no reminder-delivery infrastructure
+  // exists yet (no email/push service), see docs note in SettingsPanel.
+  workoutReminders: z.boolean().default(false),
+  weeklySummary: z.boolean().default(false),
+  streakReminders: z.boolean().default(false),
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
 
 export const DEFAULT_SETTINGS: AppSettings = {
   autoStartRestTimer: true,
   weightUnit: "lbs",
+  timerSound: true,
+  vibration: true,
+  defaultRestSeconds: 90,
+  showExerciseGuideAutomatically: true,
+  darkMode: false,
+  compactMode: false,
+  largerText: false,
+  workoutReminders: false,
+  weeklySummary: false,
+  streakReminders: false,
 };
 
 // ---------------------------------------------------------------------------
