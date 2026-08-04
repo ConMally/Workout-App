@@ -5,7 +5,7 @@ import SupabaseNotConfigured from "@/components/auth/SupabaseNotConfigured";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Reset Password — AI Workout Plan Generator" };
+export const metadata: Metadata = { title: "Reset Password — LiftWise" };
 
 interface ResetPasswordPageProps {
   searchParams: Promise<{ error?: string }>;
@@ -29,14 +29,12 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
 
   if (params.error === "invalid_link" || !user) {
     return (
-      <div className="flex flex-col gap-4 text-center">
-        <h1 className="text-xl font-bold text-slate-900">Link invalid or expired</h1>
-        <p className="text-sm text-slate-500">
-          This password reset link is no longer valid. Request a new one below.
-        </p>
+      <div className="flex flex-col items-center gap-4 text-center">
+        <h1 className="text-page-title text-text-primary">Link invalid or expired</h1>
+        <p className="text-supporting">This password reset link is no longer valid. Request a new one below.</p>
         <Link
           href="/forgot-password"
-          className="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+          className="inline-flex h-[var(--control-height)] w-fit items-center justify-center rounded-[var(--control-radius)] bg-accent px-4 text-sm font-semibold text-accent-foreground shadow-sm transition hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           Request a new link
         </Link>
@@ -47,8 +45,8 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Set a new password</h1>
-        <p className="mt-1 text-sm text-slate-500">Choose a new password for your account.</p>
+        <h1 className="text-page-title text-text-primary">Set a new password</h1>
+        <p className="mt-1 text-supporting">Choose a new password for your account.</p>
       </div>
 
       <ResetPasswordForm />

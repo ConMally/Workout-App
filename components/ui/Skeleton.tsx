@@ -16,7 +16,7 @@ export function SkeletonBlock({ className = "" }: SkeletonProps) {
   return (
     <div
       aria-hidden="true"
-      className={`skeleton-shimmer motion-safe:animate-shimmer rounded-lg bg-slate-200 dark:bg-slate-800 ${className}`}
+      className={`skeleton-shimmer motion-safe:animate-shimmer rounded-lg bg-surface-muted ${className}`}
     />
   );
 }
@@ -37,7 +37,7 @@ export function SkeletonCard({ className = "", children }: SkeletonCardProps) {
   return (
     <div
       aria-hidden="true"
-      className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900 ${className}`}
+      className={`rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6 ${className}`}
     >
       {children}
     </div>

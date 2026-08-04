@@ -5,7 +5,7 @@ import SupabaseNotConfigured from "@/components/auth/SupabaseNotConfigured";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Sign Up — AI Workout Plan Generator" };
+export const metadata: Metadata = { title: "Sign Up — LiftWise" };
 
 interface SignUpPageProps {
   searchParams: Promise<{ redirectTo?: string }>;
@@ -32,10 +32,10 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Create an account</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          An account is required to use this app. Your workout plan, history, and progress sync securely and
-          stay private to you.
+        <h1 className="text-page-title text-text-primary">Start training smarter</h1>
+        <p className="mt-1 text-supporting">
+          Personalized workouts, intelligent progression, and everything you need to train consistently — your
+          plan, history, and progress sync securely and stay private to you.
         </p>
       </div>
 

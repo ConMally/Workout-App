@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { requestPasswordReset } from "@/app/(auth)/actions";
 import { initialActionState } from "@/lib/auth/action-state";
+import Button from "@/components/ui/Button";
+import StatusMessage from "@/components/ui/StatusMessage";
 
 export default function ForgotPasswordForm() {
   const [state, formAction, pending] = useActionState(requestPasswordReset, initialActionState);
@@ -11,8 +13,8 @@ export default function ForgotPasswordForm() {
   if (state.status === "success") {
     return (
       <div className="flex flex-col gap-3 text-center">
-        <p className="rounded-lg bg-teal-50 px-3 py-3 text-sm text-teal-800">{state.message}</p>
-        <Link href="/login" className="text-sm font-medium text-teal-700 hover:underline">
+        <StatusMessage tone="success">{state.message}</StatusMessage>
+        <Link href="/login" className="text-sm font-medium text-accent hover:underline">
           Back to log in
         </Link>
       </div>
@@ -22,7 +24,7 @@ export default function ForgotPasswordForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+        <label htmlFor="email" className="block text-sm font-medium text-text-primary">
           Email
         </label>
         <input
@@ -34,31 +36,27 @@ export default function ForgotPasswordForm() {
           disabled={pending}
           aria-invalid={Boolean(state.fieldErrors?.email)}
           aria-describedby={state.fieldErrors?.email ? "email-error" : undefined}
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 disabled:bg-slate-50 disabled:text-slate-400"
+          className="mt-1 h-[var(--control-height)] w-full rounded-[var(--control-radius)] border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30 disabled:bg-surface-muted disabled:text-text-muted"
         />
         {state.fieldErrors?.email && (
-          <p id="email-error" className="mt-1 text-xs text-red-600">
+          <p id="email-error" className="mt-1 text-xs text-danger">
             {state.fieldErrors.email[0]}
           </p>
         )}
       </div>
 
       {state.status === "error" && state.message && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <StatusMessage tone="danger" role="alert">
           {state.message}
-        </p>
+        </StatusMessage>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-      >
+      <Button type="submit" loading={pending} className="w-full">
         {pending ? "Sending…" : "Send reset link"}
-      </button>
+      </Button>
 
-      <p className="text-center text-sm text-slate-500">
-        <Link href="/login" className="font-medium text-teal-700 hover:underline">
+      <p className="text-center text-sm text-text-secondary">
+        <Link href="/login" className="font-medium text-accent hover:underline">
           Back to log in
         </Link>
       </p>

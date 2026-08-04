@@ -1,8 +1,8 @@
-# AI Workout Plan Generator
+# LiftWise
 
-Generate a personalized weekly workout plan from a rule-based engine — no external API, no API
-key, and no internet connection required at runtime. Built with Next.js (App Router), TypeScript,
-Tailwind CSS, and Zod.
+Train smarter. Progress with purpose. LiftWise generates a personalized weekly workout plan from a
+rule-based engine — no external API or API key required to generate a plan. Built with Next.js (App
+Router), TypeScript, Tailwind CSS, and Zod.
 
 **This app is educational only and is not a substitute for professional medical or fitness advice.**
 

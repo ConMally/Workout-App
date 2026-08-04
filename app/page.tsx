@@ -774,7 +774,7 @@ export default function Home() {
 
   if (reposState.status === "loading" || reposState.status === "unauthenticated" || isLoadingData) {
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
+      <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
         <div role="status" aria-label="Loading" className="flex flex-col gap-3">
           <SkeletonBlock className="mx-auto h-8 w-72" />
           <SkeletonBlock className="h-11 w-full rounded-xl" />
@@ -787,7 +787,7 @@ export default function Home() {
   if (loadError) {
     const sessionExpired = isSessionExpiredMessage(loadError);
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
+      <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
         <ErrorState
           title="Couldn't load your data"
           message={loadError}
@@ -871,7 +871,7 @@ export default function Home() {
 
   return (
     <main
-      className={`mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 sm:px-6 ${
+      className={`mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col px-4 sm:px-6 ${
         settings.compactMode ? "gap-4 py-5 sm:gap-5 sm:py-7" : "gap-6 py-8 sm:gap-8 sm:py-12"
       }`}
     >

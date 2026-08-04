@@ -6,7 +6,7 @@ import { createSupabaseProfileRepository } from "@/lib/repositories/supabase/pro
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import SupabaseNotConfigured from "@/components/auth/SupabaseNotConfigured";
 
-export const metadata: Metadata = { title: "Admin — AI Workout Plan Generator" };
+export const metadata: Metadata = { title: "Admin — LiftWise" };
 
 // Phase 9 PART 4 — deliberately isolated: this route is never linked from
 // app navigation, has its own layout (no AppHeader/AppNavigation), reads

@@ -12,7 +12,7 @@ import MigrationPanel from "@/components/migration/MigrationPanel";
 import SyncStatus from "@/components/account/SyncStatus";
 import { formatDate } from "@/lib/workout-log";
 
-export const metadata: Metadata = { title: "Account — AI Workout Plan Generator" };
+export const metadata: Metadata = { title: "Account — LiftWise" };
 
 export default async function AccountPage() {
   if (!hasSupabaseEnv()) {
@@ -45,7 +45,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
+    <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
       <AppHeader activeTab="account" variant="external" />
 
       <Link

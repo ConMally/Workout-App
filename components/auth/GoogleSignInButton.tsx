@@ -1,4 +1,5 @@
 import { signInWithGoogle } from "@/app/(auth)/actions";
+import Button from "@/components/ui/Button";
 
 interface GoogleSignInButtonProps {
   redirectTo?: string;
@@ -12,10 +13,7 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
   return (
     <form action={signInWithGoogle}>
       {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
-      <button
-        type="submit"
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-      >
+      <Button type="submit" variant="secondary" className="w-full">
         <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
           <path
             fill="#4285F4"
@@ -32,7 +30,7 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
           />
         </svg>
         Continue with Google
-      </button>
+      </Button>
     </form>
   );
 }

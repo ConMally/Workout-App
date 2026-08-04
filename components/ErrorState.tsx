@@ -1,3 +1,5 @@
+import Button from "@/components/ui/Button";
+
 interface ErrorStateProps {
   title: string;
   message: string;
@@ -12,9 +14,9 @@ export default function ErrorState({
   retryLabel = "Try again",
 }: ErrorStateProps) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-6 py-8 text-center sm:px-8">
+    <div className="flex flex-col items-center gap-3 rounded-[var(--card-radius)] border border-danger/30 bg-danger-soft px-6 py-8 text-center sm:px-8">
       <span
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-danger"
         aria-hidden="true"
       >
         <svg
@@ -30,14 +32,11 @@ export default function ErrorState({
           <circle cx="12" cy="12" r="9" />
         </svg>
       </span>
-      <h2 className="text-lg font-semibold text-red-900">{title}</h2>
-      <p className="max-w-md text-sm text-red-700">{message}</p>
-      <button
-        onClick={onRetry}
-        className="mt-1 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
-      >
+      <h2 className="text-lg font-semibold text-danger">{title}</h2>
+      <p className="max-w-md text-sm text-text-secondary">{message}</p>
+      <Button variant="destructive" onClick={onRetry} className="mt-1">
         {retryLabel}
-      </button>
+      </Button>
     </div>
   );
 }

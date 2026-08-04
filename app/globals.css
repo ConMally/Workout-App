@@ -11,6 +11,37 @@
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
   --animate-scale-in: scale-in 0.18s ease-out;
   --animate-sheet-up: sheet-up 0.22s ease-out;
+
+  /* Semantic color tokens (Phase 10A) — each resolves through a plain CSS
+     custom property defined below in :root / :root.dark, so the generated
+     utility (bg-background, text-text-primary, border-border, bg-accent,
+     etc.) never needs a dark: variant of its own; the underlying value
+     just swaps with the .dark class, same mechanism the pre-existing
+     --background/--foreground pair already used. Every component built or
+     touched in this phase reads colors through these tokens instead of a
+     literal Tailwind palette class (slate-900, teal-600, ...) — screens
+     not yet migrated (Phase 10B) keep their existing literal classes and
+     are unaffected by any of this.
+  */
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-focus-ring: var(--focus-ring);
 }
 
 @keyframes step-in {
@@ -55,19 +86,159 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Color tokens — light mode. A warm, restrained "premium fitness" palette:
+   near-black text on a warm off-white (not gray) background, one indigo
+   accent used consistently for every interactive/brand moment, and muted
+   (not neon) status colors. See PRIVACY.md/README.md-adjacent design notes
+   in the Phase 10A report for the reasoning.
+   --------------------------------------------------------------------------- */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #faf9f7;
+  --surface: #ffffff;
+  --surface-muted: #f3f1ed;
+  --surface-elevated: #ffffff;
+
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #8a8a93;
+
+  --border: #e6e3de;
+
+  --accent: #4338ca;
+  --accent-hover: #3730a3;
+  --accent-soft: #eef2ff;
+  --accent-foreground: #ffffff;
+
+  --success: #15803d;
+  --success-soft: #f0fdf4;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+
+  --focus-ring: #4338ca;
+  --shadow-color: 24 24 27; /* rgb triplet, consumed as rgb(var(--shadow-color) / <alpha>) */
+
+  /* Spacing / layout tokens (Phase 10A PART 5) — consumed via Tailwind
+     arbitrary-value syntax (e.g. max-w-[var(--page-max-width)]) rather than
+     a new @theme namespace, so there's no risk of colliding with Tailwind's
+     own spacing/radius scale. --page-max-width intentionally matches the
+     56rem (max-w-4xl) already used throughout app/page.tsx — a token now,
+     not a coincidence of two hand-picked values agreeing. */
+  --page-max-width: 56rem;
+  --page-padding-x: 1rem;
+  --section-gap: 1.5rem;
+  --card-padding: 1.25rem;
+  --card-radius: 1rem;
+  --control-height: 2.75rem;
+  --control-radius: 0.625rem;
+  --nav-height: 3.25rem;
 }
 
 :root.dark {
-  --background: #0b1220;
-  --foreground: #e2e8f0;
+  --background: #131316;
+  --surface: #1b1b20;
+  --surface-muted: #19191d;
+  --surface-elevated: #232329;
+
+  --text-primary: #f4f4f5;
+  --text-secondary: #a8a8b3;
+  --text-muted: #75757f;
+
+  --border: #2c2c33;
+
+  --accent: #818cf8;
+  --accent-hover: #a5b0fb;
+  --accent-soft: rgba(129, 140, 248, 0.14);
+  --accent-foreground: #131316;
+
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+
+  --focus-ring: #a5b0fb;
+  --shadow-color: 0 0 0;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   Typography hierarchy (Phase 10A PART 4). Rem-based throughout, so the
+   larger-text appearance setting (:root.larger-text below) scales every one
+   of these uniformly for free — nothing here needs its own larger-text
+   variant. Font family is deliberately the existing default (Tailwind's
+   system-ui stack) — no new font dependency, remote or otherwise.
+   --------------------------------------------------------------------------- */
+.text-display {
+  font-size: 2.25rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.text-page-title {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.text-section-heading {
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.text-card-title {
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.text-body {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+.text-supporting {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.text-label {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+}
+
+.text-metric {
+  font-size: 1.75rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 /* Larger-text appearance setting — scales every rem-based Tailwind size

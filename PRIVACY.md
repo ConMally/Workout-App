@@ -1,6 +1,6 @@
 # Privacy
 
-This describes what data the AI Workout Plan Generator actually collects and how it's used. It's
+This describes what data LiftWise actually collects and how it's used. It's
 written to be accurate to the current beta implementation, not generic legal boilerplate — if
 you're preparing this for a real public launch, have it reviewed by counsel before publishing.
 

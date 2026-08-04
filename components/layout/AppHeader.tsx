@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppNavigation, { type Tab } from "@/components/navigation/AppNavigation";
 import AuthStatus from "@/components/auth/AuthStatus";
+import BrandMark from "@/components/brand/BrandMark";
 import { useRepositories } from "@/lib/repositories/useRepositories";
 
 interface AppHeaderProps {
@@ -58,13 +59,12 @@ export default function AppHeader({ activeTab, onTabChange, hasActiveWorkout: ha
         <AuthStatus />
       </div>
 
-      <header className="text-center">
-        <Link href="/" className="inline-block rounded-lg transition hover:opacity-80">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">AI Workout Plan Generator</h1>
+      <header className="flex flex-col items-center gap-2 text-center">
+        <Link href="/" className="inline-flex items-center gap-2.5 rounded-lg transition hover:opacity-80">
+          <BrandMark size={34} />
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">LiftWise</h1>
         </Link>
-        <p className="mt-2 text-sm text-slate-600 sm:text-base">
-          Answer a few quick questions and we&apos;ll build you a personalized weekly training plan.
-        </p>
+        <p className="max-w-sm text-sm text-text-secondary sm:text-base">Train smarter. Progress with purpose.</p>
       </header>
 
       <AppNavigation activeTab={activeTab} onTabChange={onTabChange} hasActiveWorkout={hasActiveWorkout} variant={variant} />

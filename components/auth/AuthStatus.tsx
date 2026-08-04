@@ -10,7 +10,7 @@ export default function AuthStatus() {
   const { status } = useAuthStatus();
 
   if (status === "loading") {
-    return <div className="h-9 w-40 animate-pulse rounded-lg bg-slate-100" aria-hidden="true" />;
+    return <div className="h-9 w-40 animate-pulse rounded-lg bg-surface-muted" aria-hidden="true" />;
   }
 
   if (status === "signed-in") {
@@ -18,12 +18,15 @@ export default function AuthStatus() {
       <div className="flex items-center gap-2 text-sm">
         <Link
           href="/account"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+          className="rounded-[var(--control-radius)] border border-border bg-surface px-3 py-1.5 font-medium text-text-primary shadow-sm transition hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Account
         </Link>
         <form action={logOut}>
-          <button type="submit" className="rounded-lg px-3 py-1.5 font-medium text-slate-500 transition hover:text-red-600">
+          <button
+            type="submit"
+            className="rounded-[var(--control-radius)] px-3 py-1.5 font-medium text-text-secondary transition hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
             Sign out
           </button>
         </form>
@@ -35,13 +38,13 @@ export default function AuthStatus() {
     <div className="flex items-center gap-2 text-sm">
       <Link
         href="/login"
-        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+        className="rounded-[var(--control-radius)] border border-border bg-surface px-3 py-1.5 font-medium text-text-primary shadow-sm transition hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         Log in
       </Link>
       <Link
         href="/signup"
-        className="rounded-lg bg-teal-600 px-3 py-1.5 font-semibold text-white shadow-sm transition hover:bg-teal-700"
+        className="rounded-[var(--control-radius)] bg-accent px-3 py-1.5 font-semibold text-accent-foreground shadow-sm transition hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         Sign up
       </Link>

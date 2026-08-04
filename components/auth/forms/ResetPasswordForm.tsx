@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import { resetPassword } from "@/app/(auth)/actions";
 import { initialActionState } from "@/lib/auth/action-state";
 import PasswordInput from "@/components/auth/PasswordInput";
+import Button from "@/components/ui/Button";
+import StatusMessage from "@/components/ui/StatusMessage";
 
 export default function ResetPasswordForm() {
   const [state, formAction, pending] = useActionState(resetPassword, initialActionState);
@@ -20,18 +22,14 @@ export default function ResetPasswordForm() {
       />
 
       {state.status === "error" && state.message && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <StatusMessage tone="danger" role="alert">
           {state.message}
-        </p>
+        </StatusMessage>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-      >
+      <Button type="submit" loading={pending} className="w-full">
         {pending ? "Saving…" : "Set new password"}
-      </button>
+      </Button>
     </form>
   );
 }
