@@ -18,7 +18,7 @@ export default function KeyMetrics({ streakDays, workoutsThisWeek, recentPRCount
   const recoveryMeta = RECOVERY_STATUS_META[recovery.status];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
       <StatsCard icon="🔥" label="Streak" value={`${streakDays} day${streakDays === 1 ? "" : "s"}`} />
       <StatsCard icon="💪" label="This week" value={`${workoutsThisWeek} workout${workoutsThisWeek === 1 ? "" : "s"}`} />
       <StatsCard icon="🏆" label="Recent PRs" value={String(recentPRCount)} />

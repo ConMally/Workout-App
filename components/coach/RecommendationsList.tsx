@@ -27,9 +27,9 @@ export default function RecommendationsList({ recommendations, dismissedIds, onD
 
   if (visible.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Coach</h3>
-        <p className="mt-2 text-sm text-slate-400">
+      <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <h3 className="text-label">Coach</h3>
+        <p className="mt-2 text-sm text-text-muted">
           {recommendations.length === 0
             ? "Complete a few workouts to start getting personalized coaching recommendations."
             : "You've cleared every recommendation — nice work. New ones will appear as your training data changes."}
@@ -42,18 +42,18 @@ export default function RecommendationsList({ recommendations, dismissedIds, onD
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="motion-safe:animate-step-in rounded-2xl border border-teal-200 bg-teal-50 p-5 shadow-sm sm:p-6 dark:border-teal-900 dark:bg-teal-950/30">
+      <div className="motion-safe:animate-step-in rounded-[var(--card-radius)] border border-accent/30 bg-accent-soft p-5 shadow-sm sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-teal-800 dark:text-teal-300">Today&apos;s recommendation</h3>
-            <p className="mt-2 text-base font-semibold text-teal-900 dark:text-teal-200">{today.message}</p>
-            <p className="mt-1 text-sm text-teal-700 dark:text-teal-400">{today.explanation}</p>
+            <h3 className="text-label !text-accent">Today&apos;s recommendation</h3>
+            <p className="mt-2 text-base font-semibold text-accent">{today.message}</p>
+            <p className="mt-1 text-sm text-accent">{today.explanation}</p>
           </div>
           <button
             type="button"
             onClick={() => onDismiss(today.id)}
             aria-label={`Dismiss recommendation: ${today.message}`}
-            className="flex-shrink-0 rounded-md px-2 py-1 text-xs font-medium text-teal-700 transition active:scale-95 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40"
+            className="flex-shrink-0 rounded-md px-2 py-1 text-xs font-medium text-accent transition active:scale-95 hover:bg-accent-soft"
           >
             Dismiss
           </button>
@@ -61,26 +61,26 @@ export default function RecommendationsList({ recommendations, dismissedIds, onD
       </div>
 
       {rest.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">More recommendations</h3>
+        <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+          <h3 className="text-label">More recommendations</h3>
           <ul className="mt-3 flex flex-col gap-2">
             {rest.map((rec) => (
               <li
                 key={rec.id}
-                className="motion-safe:animate-step-in flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800"
+                className="motion-safe:animate-step-in flex items-start justify-between gap-3 rounded-[var(--control-radius)] bg-surface-muted p-3"
               >
                 <div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
                     {CATEGORY_LABELS[rec.category]}
                   </span>
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{rec.message}</p>
-                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{rec.explanation}</p>
+                  <p className="text-sm font-medium text-text-primary">{rec.message}</p>
+                  <p className="mt-0.5 text-xs text-text-muted">{rec.explanation}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => onDismiss(rec.id)}
                   aria-label={`Dismiss recommendation: ${rec.message}`}
-                  className="flex-shrink-0 rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition active:scale-95 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700"
+                  className="flex-shrink-0 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition active:scale-95 hover:bg-surface"
                 >
                   Dismiss
                 </button>

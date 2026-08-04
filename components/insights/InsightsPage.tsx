@@ -23,6 +23,8 @@ import MuscleBalance from "./MuscleBalance";
 import ExerciseFrequency from "./ExerciseFrequency";
 import ReadinessTrends from "./ReadinessTrends";
 import GoalsPanel from "@/components/goals/GoalsPanel";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/EmptyState";
 
 interface InsightsPageProps {
   history: CompletedWorkout[];
@@ -84,25 +86,21 @@ export default function InsightsPage({
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Insights</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="text-page-title text-text-primary">Insights</h2>
+        <p className="mt-1 text-supporting">
           Understand whether your training is balanced, consistent, and improving over time.
         </p>
       </div>
 
       {history.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-10 text-center">
-          <p className="text-sm font-medium text-slate-600">No workout history yet</p>
-          <p className="max-w-xs text-sm text-slate-400">
-            Complete a workout to start unlocking consistency, strength, volume, and balance insights.
-          </p>
-          <button
-            type="button"
-            onClick={onGoToPlan}
-            className="mt-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-          >
+        <div className="flex flex-col items-center gap-3">
+          <EmptyState
+            title="No workout history yet"
+            message="Complete a workout to start unlocking consistency, strength, volume, and balance insights."
+          />
+          <Button type="button" variant="primary" onClick={onGoToPlan}>
             Go to your plan
-          </button>
+          </Button>
         </div>
       ) : (
         <>
@@ -123,7 +121,7 @@ export default function InsightsPage({
         </>
       )}
 
-      <div className="border-t border-slate-200 pt-6">
+      <div className="border-t border-border pt-6">
         <GoalsPanel
           goals={goals}
           history={history}

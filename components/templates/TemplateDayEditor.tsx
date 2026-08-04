@@ -74,10 +74,10 @@ export default function TemplateDayEditor({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
             Day name
             <input
               type="text"
@@ -86,19 +86,19 @@ export default function TemplateDayEditor({
               maxLength={120}
               aria-invalid={Boolean(dayNameError)}
               aria-describedby={dayNameError ? `day-${index}-name-error` : undefined}
-              className={`rounded-lg border px-2.5 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 ${
+              className={`rounded-[var(--control-radius)] border bg-surface px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 ${
                 dayNameError
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-500/30"
-                  : "border-slate-200 focus:border-teal-500 focus:ring-teal-500/30"
+                  ? "border-danger focus:border-danger focus:ring-danger/30"
+                  : "border-border focus:border-accent focus:ring-focus-ring/30"
               }`}
             />
             {dayNameError && (
-              <p id={`day-${index}-name-error`} className="text-xs text-red-600">
+              <p id={`day-${index}-name-error`} className="text-xs text-danger">
                 {dayNameError}
               </p>
             )}
           </label>
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
             Focus
             <input
               type="text"
@@ -106,7 +106,7 @@ export default function TemplateDayEditor({
               onChange={(e) => onChange({ ...day, focus: e.target.value })}
               placeholder="e.g. Chest, shoulders & triceps"
               maxLength={120}
-              className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              className="rounded-[var(--control-radius)] border border-border bg-surface px-2.5 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
             />
           </label>
         </div>
@@ -118,7 +118,7 @@ export default function TemplateDayEditor({
               onClick={() => onMove("up")}
               disabled={index === 0}
               aria-label={`Move ${day.dayName || "day"} up`}
-              className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+              className="rounded-md border border-border px-1.5 py-0.5 text-xs text-text-secondary transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-30"
             >
               ↑
             </button>
@@ -127,7 +127,7 @@ export default function TemplateDayEditor({
               onClick={() => onMove("down")}
               disabled={index === count - 1}
               aria-label={`Move ${day.dayName || "day"} down`}
-              className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+              className="rounded-md border border-border px-1.5 py-0.5 text-xs text-text-secondary transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-30"
             >
               ↓
             </button>
@@ -137,14 +137,14 @@ export default function TemplateDayEditor({
             onClick={onRemove}
             disabled={removeDisabled}
             aria-label={`Remove ${day.dayName || "day"}`}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-300 disabled:hover:bg-transparent disabled:hover:text-slate-600"
+            className="rounded-[var(--control-radius)] border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:border-danger/40 hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-text-secondary"
           >
             Remove day
           </button>
         </div>
       </div>
 
-      {exercisesError && <p className="mt-2 text-xs text-red-600">{exercisesError}</p>}
+      {exercisesError && <p className="mt-2 text-xs text-danger">{exercisesError}</p>}
 
       <div className="mt-3 flex flex-col gap-2">
         {day.exercises.map((exercise, exerciseIndex) => (
@@ -175,7 +175,7 @@ export default function TemplateDayEditor({
       <button
         type="button"
         onClick={() => setPickerMode({ kind: "add" })}
-        className="mt-3 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-teal-700 transition hover:bg-teal-50"
+        className="mt-3 rounded-[var(--control-radius)] border border-dashed border-border px-3 py-1.5 text-xs font-medium text-accent transition hover:bg-accent-soft"
       >
         + Add exercise
       </button>

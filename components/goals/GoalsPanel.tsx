@@ -5,6 +5,9 @@ import type { CompletedWorkout } from "@/types/workout-log";
 import type { Goal, GoalProgress, GoalType } from "@/types/goals";
 import { GOAL_TYPE_LABELS, createGoal, getGoalProgress } from "@/lib/goals";
 import GoalForm from "./GoalForm";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
+import EmptyState from "@/components/EmptyState";
 
 interface GoalsPanelProps {
   goals: Goal[];
@@ -52,17 +55,13 @@ export default function GoalsPanel({ goals, history, exerciseNames, onCreate, on
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Goals</h2>
-          <p className="mt-1 text-sm text-slate-500">Track strength and consistency targets over time.</p>
+          <h2 className="text-page-title text-text-primary">Goals</h2>
+          <p className="mt-1 text-supporting">Track strength and consistency targets over time.</p>
         </div>
         {formMode === "none" && (
-          <button
-            type="button"
-            onClick={() => setFormMode("create")}
-            className="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-          >
+          <Button type="button" variant="primary" onClick={() => setFormMode("create")}>
             Add goal
-          </button>
+          </Button>
         )}
       </div>
 
@@ -74,51 +73,47 @@ export default function GoalsPanel({ goals, history, exerciseNames, onCreate, on
       )}
 
       {goals.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-10 text-center">
-          <p className="text-sm font-medium text-slate-600">No goals yet</p>
-          <p className="max-w-xs text-sm text-slate-400">
-            Create a strength or consistency goal to track your progress over time.
-          </p>
-        </div>
+        <EmptyState
+          title="No goals yet"
+          message="Create a strength or consistency goal to track your progress over time."
+        />
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
           {goals.map((goal) => {
             const progress = progressByGoalId.get(goal.id);
             if (!progress) return null;
             return (
-              <li key={goal.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <li key={goal.id} className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{GOAL_TYPE_LABELS[goal.type]}</p>
-                    <p className="mt-0.5 truncate text-sm font-bold text-slate-900">{goal.title}</p>
+                    <p className="text-label">{GOAL_TYPE_LABELS[goal.type]}</p>
+                    <p className="mt-0.5 truncate text-card-title text-text-primary">{goal.title}</p>
                   </div>
-                  {progress.isComplete && (
-                    <span className="flex-shrink-0 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700">Complete</span>
-                  )}
+                  {progress.isComplete && <Badge tone="success" className="flex-shrink-0">Complete</Badge>}
                 </div>
 
                 <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center justify-between text-xs text-text-muted">
                     <span>
                       {progress.currentValue} / {goal.targetValue}
                     </span>
                     <span>{progress.progressPercent}%</span>
                   </div>
-                  <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
                     <div
-                      className="h-full rounded-full bg-teal-500 motion-safe:transition-all motion-safe:duration-500"
+                      className="h-full rounded-full bg-accent motion-safe:transition-all motion-safe:duration-500"
                       style={{ width: `${progress.progressPercent}%` }}
                     />
                   </div>
                 </div>
 
-                {goal.targetDate && <p className="mt-2 text-xs text-slate-400">Target date: {goal.targetDate}</p>}
+                {goal.targetDate && <p className="mt-2 text-xs text-text-muted">Target date: {goal.targetDate}</p>}
 
                 <div className="mt-3 flex gap-3 text-xs font-medium">
-                  <button type="button" onClick={() => setFormMode(goal.id)} className="text-teal-700 hover:underline">
+                  <button type="button" onClick={() => setFormMode(goal.id)} className="text-accent hover:underline">
                     Edit
                   </button>
-                  <button type="button" onClick={() => handleDelete(goal)} className="text-slate-500 hover:text-red-600 hover:underline">
+                  <button type="button" onClick={() => handleDelete(goal)} className="text-text-muted hover:text-danger hover:underline">
                     Delete
                   </button>
                 </div>

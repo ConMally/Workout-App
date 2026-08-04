@@ -17,16 +17,16 @@ export default function MigrationBanner() {
   if (loading || !eligible || dismissed || !preview) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--control-radius)] border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-accent">
       <p>This browser has workout data from before you signed in. Review it and choose whether to import it.</p>
       <div className="flex shrink-0 items-center gap-3">
-        <Link href="/account" className="font-semibold text-teal-700 hover:underline">
+        <Link href="/account" className="font-semibold text-accent hover:underline">
           Review data
         </Link>
         <button
           type="button"
           onClick={() => setDismissed(true)}
-          className="rounded-md px-1.5 py-0.5 text-teal-600 transition hover:bg-teal-100"
+          className="rounded-md px-1.5 py-0.5 text-accent transition hover:bg-accent-soft"
         >
           Not now
         </button>

@@ -28,8 +28,8 @@ export default function SettingsPanel({ settings, hasActiveWorkout, onUpdateSett
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Settings</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <h2 className="text-page-title text-text-primary">Settings</h2>
+        <p className="mt-1 text-supporting">
           Customize units, workout behavior, appearance, and notifications.
         </p>
       </div>
@@ -118,40 +118,42 @@ export default function SettingsPanel({ settings, hasActiveWorkout, onUpdateSett
         />
       </SettingsSection>
 
-      <SettingsSection title="Active workout">
-        <div className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+      <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <h3 className="text-label">Your data</h3>
+        <p className="mt-1 text-xs text-text-muted">
+          Your workout data is stored in your account and backed up automatically.
+        </p>
+      </div>
+
+      <div className="rounded-[var(--card-radius)] border border-danger/30 bg-danger-soft p-5 sm:p-6">
+        <h3 className="text-label !text-danger">Danger zone</h3>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Active workout</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {hasActiveWorkout ? "Discard your in-progress workout." : "No workout currently in progress."}
+            <p className="text-sm font-medium text-danger">Active workout</p>
+            <p className="text-xs text-danger/80">
+              {hasActiveWorkout ? "Discard your in-progress workout. This can't be undone." : "No workout currently in progress."}
             </p>
           </div>
           <button
             type="button"
             onClick={handleClearActiveWorkout}
             disabled={!hasActiveWorkout}
-            className="flex-shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-300 disabled:hover:bg-transparent disabled:hover:text-slate-700 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-red-950/40"
+            className="flex-shrink-0 rounded-[var(--control-radius)] border border-danger/40 bg-surface px-3 py-1.5 text-xs font-medium text-danger transition hover:bg-danger-soft active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-surface"
           >
             Clear active workout
           </button>
         </div>
-        <div className="py-3 last:pb-0">
-          <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Your data</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Your workout data is stored in your account and backed up automatically.
-          </p>
-        </div>
-      </SettingsSection>
+      </div>
     </div>
   );
 }
 
 function SettingsSection({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</h3>
-      {note && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{note}</p>}
-      <div className="mt-2 flex flex-col divide-y divide-slate-100 dark:divide-slate-800">{children}</div>
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+      <h3 className="text-label">{title}</h3>
+      {note && <p className="mt-1 text-xs text-text-muted">{note}</p>}
+      <div className="mt-2 flex flex-col divide-y divide-border">{children}</div>
     </div>
   );
 }
@@ -160,8 +162,8 @@ function ToggleRow({ label, description, children }: { label: string; descriptio
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
       <div>
-        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{label}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+        <p className="text-sm font-medium text-text-primary">{label}</p>
+        <p className="text-xs text-text-muted">{description}</p>
       </div>
       {children}
     </div>
@@ -182,8 +184,8 @@ function Switch({
   return (
     <div className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
       <div>
-        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{label}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+        <p className="text-sm font-medium text-text-primary">{label}</p>
+        <p className="text-xs text-text-muted">{description}</p>
       </div>
       <label className="relative inline-flex flex-shrink-0 cursor-pointer items-center">
         <input
@@ -193,8 +195,8 @@ function Switch({
           aria-label={label}
           className="peer sr-only"
         />
-        <span className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-teal-600 dark:bg-slate-700" />
-        <span className="absolute left-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
+        <span className="h-6 w-11 rounded-full bg-surface-muted transition peer-checked:bg-accent" />
+        <span className="absolute left-0.5 h-5 w-5 rounded-full bg-white shadow motion-safe:transition motion-safe:peer-checked:translate-x-5" />
       </label>
     </div>
   );
@@ -212,7 +214,7 @@ function SegmentedControl<T extends string | number>({
   format?: (value: T) => string;
 }) {
   return (
-    <div className="flex flex-shrink-0 flex-wrap gap-1 rounded-lg border border-slate-200 p-1 dark:border-slate-700">
+    <div className="flex flex-shrink-0 flex-wrap gap-1 rounded-[var(--control-radius)] border border-border p-1">
       {options.map((option) => (
         <button
           key={option}
@@ -220,9 +222,7 @@ function SegmentedControl<T extends string | number>({
           onClick={() => onChange(option)}
           aria-pressed={value === option}
           className={`rounded-md px-3 py-1 text-xs font-semibold transition active:scale-95 ${
-            value === option
-              ? "bg-teal-600 text-white"
-              : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+            value === option ? "bg-accent text-accent-foreground" : "text-text-secondary hover:bg-surface-muted"
           }`}
         >
           {format ? format(option) : option}

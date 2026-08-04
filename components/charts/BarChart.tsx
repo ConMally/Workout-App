@@ -19,7 +19,7 @@ const BAR_GAP = 8;
 // Reused for training volume, workout frequency, and muscle-group volume.
 export default function BarChart({ bars, unit = "", ariaLabel, formatValue }: BarChartProps) {
   if (bars.length === 0) {
-    return <p className="text-sm text-slate-400">Not enough data yet to chart.</p>;
+    return <p className="text-sm text-text-muted">Not enough data yet to chart.</p>;
   }
 
   const max = Math.max(...bars.map((b) => b.value), 1);
@@ -32,7 +32,7 @@ export default function BarChart({ bars, unit = "", ariaLabel, formatValue }: Ba
         viewBox={`0 0 100 ${HEIGHT}`}
         role="img"
         aria-label={ariaLabel}
-        className="w-full text-teal-600"
+        className="w-full text-accent"
         preserveAspectRatio="none"
       >
         {bars.map((bar, i) => {
@@ -55,11 +55,11 @@ export default function BarChart({ bars, unit = "", ariaLabel, formatValue }: Ba
           );
         })}
       </svg>
-      <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+      <div className="mt-1 flex justify-between text-[10px] text-text-muted">
         <span>{bars[0].label}</span>
         <span>{bars[bars.length - 1].label}</span>
       </div>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-text-muted">
         Latest: {bars[bars.length - 1].label} — {format(bars[bars.length - 1].value)}
       </p>
     </div>

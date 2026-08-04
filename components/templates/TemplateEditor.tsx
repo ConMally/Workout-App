@@ -8,6 +8,8 @@ import type { TemplateDay, WorkoutTemplate } from "@/types/templates";
 import type { CompletedWorkout, WeightUnit } from "@/types/workout-log";
 import TemplateDayEditor from "./TemplateDayEditor";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
 
 export interface TemplateEditorSubmitInput {
   name: string;
@@ -131,9 +133,9 @@ export default function TemplateEditor({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <Card>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+          <label className="flex flex-col gap-1 text-sm font-medium text-text-secondary">
             Template name
             <input
               type="text"
@@ -143,25 +145,25 @@ export default function TemplateEditor({
               placeholder="e.g. Upper/Lower Split"
               aria-invalid={Boolean(nameIssue)}
               aria-describedby={nameIssue ? "template-name-error" : undefined}
-              className={`rounded-lg border px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 ${
+              className={`h-[var(--control-height)] rounded-[var(--control-radius)] border bg-surface px-3 text-sm text-text-primary focus:outline-none focus:ring-2 ${
                 nameIssue
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-500/30"
-                  : "border-slate-200 focus:border-teal-500 focus:ring-teal-500/30"
+                  ? "border-danger focus:border-danger focus:ring-danger/30"
+                  : "border-border focus:border-accent focus:ring-focus-ring/30"
               }`}
             />
             {nameIssue && (
-              <p id="template-name-error" className="text-xs text-red-600">
+              <p id="template-name-error" className="text-xs text-danger">
                 {nameIssue}
               </p>
             )}
           </label>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+          <label className="flex flex-col gap-1 text-sm font-medium text-text-secondary">
             Goal
             <select
               value={goal}
               onChange={(e) => setGoal(e.target.value as WorkoutTemplate["goal"])}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              className="h-[var(--control-height)] rounded-[var(--control-radius)] border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
             >
               {GoalEnum.options.map((option) => (
                 <option key={option} value={option}>
@@ -172,19 +174,19 @@ export default function TemplateEditor({
           </label>
         </div>
 
-        <label className="mt-4 flex flex-col gap-1 text-sm font-medium text-slate-700">
+        <label className="mt-4 flex flex-col gap-1 text-sm font-medium text-text-secondary">
           Description (optional)
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={1000}
             rows={2}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+            className="rounded-[var(--control-radius)] border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
           />
         </label>
-      </div>
+      </Card>
 
-      {daysIssue && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{daysIssue}</p>}
+      {daysIssue && <p className="rounded-[var(--control-radius)] bg-danger-soft px-3 py-2 text-sm text-danger">{daysIssue}</p>}
 
       <div className="flex flex-col gap-3">
         {days.map((day, index) => (
@@ -210,34 +212,25 @@ export default function TemplateEditor({
         type="button"
         onClick={addDay}
         disabled={days.length >= 7}
-        className="w-fit rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-teal-700 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="w-fit rounded-[var(--control-radius)] border border-dashed border-border px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
       >
         + Add day
       </button>
 
       {topLevelIssueCount > 0 && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-[var(--control-radius)] bg-danger-soft px-3 py-2 text-sm text-danger">
           Fix the {topLevelIssueCount === 1 ? "issue" : `${topLevelIssueCount} issues`} highlighted above before saving.
         </p>
       )}
-      {errorMessage && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>}
+      {errorMessage && <p className="rounded-[var(--control-radius)] bg-danger-soft px-3 py-2 text-sm text-danger">{errorMessage}</p>}
 
       <div className="flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          onClick={handleCancelClick}
-          disabled={submitting}
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <Button type="button" variant="secondary" onClick={handleCancelClick} disabled={submitting}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </Button>
+        <Button type="submit" variant="primary" loading={submitting}>
           {submitting ? "Saving…" : initialTemplate ? "Save changes" : "Create template"}
-        </button>
+        </Button>
       </div>
 
       {showUnsavedDialog && (

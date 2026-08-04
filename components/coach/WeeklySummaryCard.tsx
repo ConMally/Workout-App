@@ -12,9 +12,9 @@ interface WeeklySummaryCardProps {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2">
-      <p className="text-xs font-medium text-slate-400">{label}</p>
-      <p className="mt-0.5 text-sm font-bold text-slate-900">{value}</p>
+    <div className="rounded-[var(--control-radius)] bg-surface-muted px-3 py-2">
+      <p className="text-xs font-medium text-text-muted">{label}</p>
+      <p className="mt-0.5 text-sm font-bold text-text-primary">{value}</p>
     </div>
   );
 }
@@ -23,8 +23,8 @@ export default function WeeklySummaryCard({ consistency, volume, trends, weeklyT
   const thisWeek = volume.weekly[volume.weekly.length - 1];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Weekly summary</h3>
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+      <h3 className="text-label">Weekly summary</h3>
 
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Workouts" value={`${consistency.workoutsThisWeek} / ${weeklyTarget}`} />
@@ -40,7 +40,7 @@ export default function WeeklySummaryCard({ consistency, volume, trends, weeklyT
       </div>
 
       <div className="mt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Training volume (8 weeks)</p>
+        <p className="text-label">Training volume (8 weeks)</p>
         <div className="mt-2">
           <BarChart
             bars={volume.weekly.map((w) => ({ label: w.label, value: w.volume }))}

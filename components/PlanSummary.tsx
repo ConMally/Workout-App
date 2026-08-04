@@ -25,13 +25,11 @@ export default function PlanSummary({ plan }: { plan: WorkoutPlan }) {
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+          className="rounded-[var(--card-radius)] border border-border bg-surface px-4 py-3 shadow-sm"
           title={item.value}
         >
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            {item.label}
-          </p>
-          <p className="mt-1 truncate text-sm font-semibold text-slate-900">{item.value}</p>
+          <p className="text-label">{item.label}</p>
+          <p className="mt-1 truncate text-card-title text-text-primary">{item.value}</p>
         </div>
       ))}
     </div>

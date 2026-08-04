@@ -34,7 +34,7 @@ export default function OfflineBanner() {
   return (
     <div
       role="status"
-      className="motion-safe:animate-step-in flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+      className="motion-safe:animate-step-in flex items-center gap-2 rounded-[var(--control-radius)] border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-warning"
     >
       <span aria-hidden="true">📶</span>
       You&apos;re offline. Keep logging as normal, but avoid refreshing — changes won&apos;t save to your account until

@@ -7,6 +7,13 @@ import { moveItem } from "@/lib/templates";
 import { getDayEditingSuggestions } from "@/lib/exercises/suggestions";
 import AddExerciseDialog from "./AddExerciseDialog";
 import ReplacementPicker from "@/components/exercises/ReplacementPicker";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+
+const FIELD_CLASS =
+  "rounded-[var(--control-radius)] border border-border bg-surface px-2.5 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30";
+const ICON_BUTTON_CLASS =
+  "rounded-md border border-border px-1.5 py-0.5 text-xs text-text-secondary transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-30";
 
 type TrainingDay = WorkoutPlan["weeklySchedule"][number];
 type PlanExercise = TrainingDay["exercises"][number];
@@ -97,8 +104,8 @@ export default function PlanEditor({ plan, availableEquipment, onSave, onCancel,
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Edit plan</h2>
-          <p className="mt-0.5 text-sm text-slate-500">Add, remove, reorder, or replace exercises and days.</p>
+          <h2 className="text-page-title text-text-primary">Edit plan</h2>
+          <p className="mt-0.5 text-supporting">Add, remove, reorder, or replace exercises and days.</p>
         </div>
       </div>
 
@@ -122,12 +129,12 @@ export default function PlanEditor({ plan, availableEquipment, onSave, onCancel,
       </div>
 
       <div className="flex flex-wrap justify-end gap-2">
-        <button type="button" onClick={onCancel} disabled={submitting} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={submitting}>
           Cancel
-        </button>
-        <button type="button" onClick={handleSave} disabled={submitting} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">
+        </Button>
+        <Button type="button" variant="primary" onClick={handleSave} loading={submitting}>
           {submitting ? "Saving…" : "Save changes"}
-        </button>
+        </Button>
       </div>
 
       {addingToDay !== null && (
@@ -179,34 +186,32 @@ function PlanDayEditorCard({
   const suggestions = useMemo(() => getDayEditingSuggestions(day), [day]);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <Card padded className="sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-slate-600">
+        <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-text-secondary">
           Day name
           <input
             type="text"
             value={day.title}
             onChange={(e) => onRename(e.target.value)}
             maxLength={120}
-            className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm font-semibold text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+            className={`${FIELD_CLASS} font-semibold`}
           />
         </label>
-        <div className="flex items-center gap-1">
-          <div className="flex flex-col gap-0.5">
-            <button type="button" onClick={() => onMove("up")} disabled={index === 0} aria-label={`Move ${day.title} up`} className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30">
-              ↑
-            </button>
-            <button type="button" onClick={() => onMove("down")} disabled={index === count - 1} aria-label={`Move ${day.title} down`} className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30">
-              ↓
-            </button>
-          </div>
+        <div className="flex flex-col gap-0.5">
+          <button type="button" onClick={() => onMove("up")} disabled={index === 0} aria-label={`Move ${day.title} up`} className={ICON_BUTTON_CLASS}>
+            ↑
+          </button>
+          <button type="button" onClick={() => onMove("down")} disabled={index === count - 1} aria-label={`Move ${day.title} down`} className={ICON_BUTTON_CLASS}>
+            ↓
+          </button>
         </div>
       </div>
 
       {suggestions.length > 0 && (
         <ul className="mt-3 flex flex-col gap-1.5">
           {suggestions.map((s) => (
-            <li key={s.id} className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
+            <li key={s.id} className="rounded-[var(--control-radius)] bg-warning-soft px-3 py-1.5 text-xs text-warning">
               <span className="font-semibold">{s.message}</span> {s.explanation}
             </li>
           ))}
@@ -215,61 +220,61 @@ function PlanDayEditorCard({
 
       <div className="mt-3 flex flex-col gap-2">
         {day.exercises.map((exercise, exerciseIndex) => (
-          <div key={exerciseIndex} className="grid grid-cols-2 gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:grid-cols-6">
-            <div className="col-span-2 flex flex-col gap-1 text-xs font-medium text-slate-600 sm:col-span-2">
+          <div key={exerciseIndex} className="grid grid-cols-2 gap-2 rounded-[var(--control-radius)] border border-border bg-surface-muted/60 p-3 sm:grid-cols-6">
+            <div className="col-span-2 flex flex-col gap-1 text-xs font-medium text-text-secondary sm:col-span-2">
               Exercise
-              <p className="truncate rounded-lg border border-transparent px-2.5 py-1.5 text-sm font-semibold text-slate-800">{exercise.name}</p>
+              <p className="truncate rounded-[var(--control-radius)] border border-transparent px-2.5 py-1.5 text-sm font-semibold text-text-primary">{exercise.name}</p>
             </div>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
               Sets
-              <input type="number" min={1} max={10} value={exercise.sets} onChange={(e) => onUpdateExercise(exerciseIndex, { sets: Number(e.target.value) })} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+              <input type="number" min={1} max={10} value={exercise.sets} onChange={(e) => onUpdateExercise(exerciseIndex, { sets: Number(e.target.value) })} className={FIELD_CLASS} />
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
               Reps
-              <input type="text" value={exercise.reps} onChange={(e) => onUpdateExercise(exerciseIndex, { reps: e.target.value })} maxLength={20} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+              <input type="text" value={exercise.reps} onChange={(e) => onUpdateExercise(exerciseIndex, { reps: e.target.value })} maxLength={20} className={FIELD_CLASS} />
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
               Rest (s)
-              <input type="number" min={0} max={600} value={exercise.restSeconds} onChange={(e) => onUpdateExercise(exerciseIndex, { restSeconds: Number(e.target.value) })} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+              <input type="number" min={0} max={600} value={exercise.restSeconds} onChange={(e) => onUpdateExercise(exerciseIndex, { restSeconds: Number(e.target.value) })} className={FIELD_CLASS} />
             </label>
 
             <div className="col-span-2 flex flex-wrap items-end gap-1 sm:col-span-6">
               <div className="flex flex-col gap-0.5">
-                <button type="button" onClick={() => onMoveExercise(exerciseIndex, "up")} disabled={exerciseIndex === 0} aria-label={`Move ${exercise.name} up`} className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30">
+                <button type="button" onClick={() => onMoveExercise(exerciseIndex, "up")} disabled={exerciseIndex === 0} aria-label={`Move ${exercise.name} up`} className={ICON_BUTTON_CLASS}>
                   ↑
                 </button>
-                <button type="button" onClick={() => onMoveExercise(exerciseIndex, "down")} disabled={exerciseIndex === day.exercises.length - 1} aria-label={`Move ${exercise.name} down`} className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30">
+                <button type="button" onClick={() => onMoveExercise(exerciseIndex, "down")} disabled={exerciseIndex === day.exercises.length - 1} aria-label={`Move ${exercise.name} down`} className={ICON_BUTTON_CLASS}>
                   ↓
                 </button>
               </div>
-              <button type="button" onClick={() => onReplaceExercise(exerciseIndex)} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
+              <Button type="button" variant="ghost" size="sm" onClick={() => onReplaceExercise(exerciseIndex)} className="h-auto px-2.5 py-1.5 text-xs">
                 Replace
-              </button>
-              <button type="button" onClick={() => onDuplicateExercise(exerciseIndex)} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => onDuplicateExercise(exerciseIndex)} className="h-auto px-2.5 py-1.5 text-xs">
                 Duplicate
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={() => onRemoveExercise(exerciseIndex)}
                 disabled={day.exercises.length <= 1}
                 aria-label={`Remove ${exercise.name}`}
-                className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-[var(--control-radius)] border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-danger/40 hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Remove
               </button>
             </div>
 
-            <label className="col-span-2 flex flex-col gap-1 text-xs font-medium text-slate-600 sm:col-span-6">
+            <label className="col-span-2 flex flex-col gap-1 text-xs font-medium text-text-secondary sm:col-span-6">
               Notes (optional)
-              <input type="text" value={exercise.notes} onChange={(e) => onUpdateExercise(exerciseIndex, { notes: e.target.value })} maxLength={2000} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+              <input type="text" value={exercise.notes} onChange={(e) => onUpdateExercise(exerciseIndex, { notes: e.target.value })} maxLength={2000} className={FIELD_CLASS} />
             </label>
           </div>
         ))}
       </div>
 
-      <button type="button" onClick={onAddExercise} className="mt-3 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-teal-700 transition hover:bg-teal-50">
+      <button type="button" onClick={onAddExercise} className="mt-3 rounded-[var(--control-radius)] border border-dashed border-border px-3 py-1.5 text-xs font-medium text-accent transition hover:bg-accent-soft">
         + Add exercise
       </button>
-    </div>
+    </Card>
   );
 }

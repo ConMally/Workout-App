@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { WorkoutPlan } from "@/types/workout";
 import type { Equipment } from "@/types/exercises";
 import ReplacementPicker from "@/components/exercises/ReplacementPicker";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
 
 type TrainingDay = WorkoutPlan["weeklySchedule"][number];
 
@@ -18,16 +20,14 @@ interface DayCardProps {
 export default function DayCard({ day, onStartWorkout, startDisabled, availableEquipment, onReplaceExercise }: DayCardProps) {
   const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wide text-teal-600">
-            {day.day}
-          </span>
-          <h3 className="mt-0.5 text-xl font-bold text-slate-900">{day.title}</h3>
-          <p className="mt-1 text-sm text-slate-500">{day.focus}</p>
+          <span className="text-eyebrow">{day.day}</span>
+          <h3 className="mt-0.5 text-section-heading text-text-primary">{day.title}</h3>
+          <p className="mt-1 text-supporting">{day.focus}</p>
         </div>
-        <span className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">
+        <span className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1.5 text-sm font-semibold text-text-secondary">
           <svg
             viewBox="0 0 24 24"
             className="h-4 w-4"
@@ -47,15 +47,15 @@ export default function DayCard({ day, onStartWorkout, startDisabled, availableE
 
       {day.warmup.length > 0 && (
         <section className="mt-5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-teal-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-teal-500" aria-hidden="true" />
+          <div className="flex items-center gap-1.5 text-eyebrow">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
             Warm-up
           </div>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+          <ul className="mt-2 space-y-1 text-supporting">
             {day.warmup.map((item, i) => (
               <li key={i} className="flex justify-between gap-3">
                 <span>{item.name}</span>
-                <span className="flex-shrink-0 text-slate-400">{item.duration}</span>
+                <span className="flex-shrink-0 text-text-muted">{item.duration}</span>
               </li>
             ))}
           </ul>
@@ -63,33 +63,27 @@ export default function DayCard({ day, onStartWorkout, startDisabled, availableE
       )}
 
       <section className="mt-5">
-        <h4 className="text-sm font-bold uppercase tracking-wide text-slate-800">Exercises</h4>
-        <ul className="mt-2 divide-y divide-slate-100">
+        <h4 className="text-label">Exercises</h4>
+        <ul className="mt-2 divide-y divide-border">
           {day.exercises.map((exercise, i) => (
             <li
               key={i}
               className="flex flex-col gap-2 py-3 first:pt-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <div className="min-w-0">
-                <p className="font-bold text-slate-900">{exercise.name}</p>
+                <p className="text-card-title text-text-primary">{exercise.name}</p>
                 {exercise.notes && (
-                  <p className="mt-0.5 text-xs text-slate-500">{exercise.notes}</p>
+                  <p className="mt-0.5 text-xs text-text-muted">{exercise.notes}</p>
                 )}
               </div>
-              <div className="flex flex-shrink-0 flex-wrap items-center gap-1.5 text-xs">
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
-                  {exercise.sets} sets
-                </span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
-                  {exercise.reps} reps
-                </span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
-                  {exercise.restSeconds}s rest
+              <div className="flex flex-shrink-0 flex-wrap items-center gap-2 text-xs">
+                <span className="text-text-secondary">
+                  {exercise.sets} sets · {exercise.reps} reps · {exercise.restSeconds}s rest
                 </span>
                 <button
                   type="button"
                   onClick={() => setReplacingIndex(i)}
-                  className="rounded-full border border-slate-200 px-2.5 py-1 font-medium text-slate-500 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
+                  className="rounded-full border border-border px-2.5 py-1 font-medium text-text-muted transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
                 >
                   Replace
                 </button>
@@ -101,29 +95,22 @@ export default function DayCard({ day, onStartWorkout, startDisabled, availableE
 
       {day.cooldown.length > 0 && (
         <section className="mt-5">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Cooldown
-          </h4>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+          <h4 className="text-label">Cooldown</h4>
+          <ul className="mt-2 space-y-1 text-supporting">
             {day.cooldown.map((item, i) => (
               <li key={i} className="flex justify-between gap-3">
                 <span>{item.name}</span>
-                <span className="flex-shrink-0 text-slate-400">{item.duration}</span>
+                <span className="flex-shrink-0 text-text-muted">{item.duration}</span>
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      <div className="mt-5 border-t border-slate-100 pt-4">
-        <button
-          type="button"
-          onClick={onStartWorkout}
-          disabled={startDisabled}
-          className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-        >
+      <div className="mt-5 border-t border-border pt-4">
+        <Button variant="primary" onClick={onStartWorkout} disabled={startDisabled} className="w-full">
           Start Workout
-        </button>
+        </Button>
       </div>
 
       {replacingIndex !== null && (
@@ -138,6 +125,6 @@ export default function DayCard({ day, onStartWorkout, startDisabled, availableE
           onCancel={() => setReplacingIndex(null)}
         />
       )}
-    </div>
+    </Card>
   );
 }

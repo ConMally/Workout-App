@@ -109,13 +109,13 @@ export default async function AdminPage() {
   );
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 bg-background px-4 py-8 sm:px-6 sm:py-12">
       <div>
-        <Link href="/" className="text-sm font-medium text-teal-700 hover:underline">
+        <Link href="/" className="text-sm font-medium text-accent hover:underline">
           ← Back to app
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">Beta admin dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">Aggregate usage across all beta users. Not linked from the app.</p>
+        <h1 className="mt-2 text-page-title text-text-primary">Beta admin dashboard</h1>
+        <p className="mt-1 text-supporting">Aggregate usage across all beta users. Not linked from the app.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -135,34 +135,34 @@ export default async function AdminPage() {
         <ListCard title="Most common goals" entries={mostCommonGoals} />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Feedback</h2>
-          <span className="text-xs text-slate-500">
+          <h2 className="text-label">Feedback</h2>
+          <span className="text-xs text-text-muted">
             {feedbackRows.length} total · avg rating {averageRating}
             {ratings.length > 0 ? ` (${ratings.length} ratings)` : ""}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {feedbackByType.map((entry) => (
-            <span key={entry.label} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+            <span key={entry.label} className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-text-secondary">
               {entry.label}: {entry.count}
             </span>
           ))}
         </div>
-        <ul className="mt-4 flex flex-col divide-y divide-slate-100">
+        <ul className="mt-4 flex flex-col divide-y divide-border">
           {recentFeedback.length === 0 ? (
-            <li className="py-3 text-sm text-slate-400">No feedback submitted yet.</li>
+            <li className="py-3 text-sm text-text-muted">No feedback submitted yet.</li>
           ) : (
             recentFeedback.map((entry, i) => (
               <li key={i} className="flex flex-col gap-1 py-3 first:pt-0">
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">{entry.type}</span>
+                <div className="flex items-center gap-2 text-xs text-text-muted">
+                  <span className="rounded-full bg-surface-muted px-2 py-0.5 font-medium text-text-secondary">{entry.type}</span>
                   {entry.rating !== null && <span>{"★".repeat(entry.rating)}</span>}
                   {entry.page && <span>· {entry.page}</span>}
                   <span>· {new Date(entry.created_at).toLocaleDateString()}</span>
                 </div>
-                {entry.message && <p className="text-sm text-slate-700">{entry.message}</p>}
+                {entry.message && <p className="text-sm text-text-secondary">{entry.message}</p>}
               </li>
             ))
           )}
@@ -174,25 +174,25 @@ export default async function AdminPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-0.5 text-2xl font-bold text-slate-900">{value}</p>
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-4 shadow-sm">
+      <p className="text-label">{label}</p>
+      <p className="mt-0.5 text-metric text-text-primary">{value}</p>
     </div>
   );
 }
 
 function ListCard({ title, entries, emptyMessage }: { title: string; entries: CountEntry[]; emptyMessage?: string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{title}</h2>
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+      <h2 className="text-label">{title}</h2>
       {entries.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-400">{emptyMessage ?? "No data yet."}</p>
+        <p className="mt-3 text-sm text-text-muted">{emptyMessage ?? "No data yet."}</p>
       ) : (
-        <ul className="mt-3 flex flex-col divide-y divide-slate-100">
+        <ul className="mt-3 flex flex-col divide-y divide-border">
           {entries.map((entry) => (
             <li key={entry.label} className="flex items-center justify-between gap-3 py-2 first:pt-0">
-              <span className="truncate text-sm text-slate-700 capitalize">{entry.label.replace(/_/g, " ")}</span>
-              <span className="flex-shrink-0 text-sm font-semibold text-slate-900">{entry.count}</span>
+              <span className="truncate text-sm text-text-secondary capitalize">{entry.label.replace(/_/g, " ")}</span>
+              <span className="flex-shrink-0 text-sm font-semibold text-text-primary">{entry.count}</span>
             </li>
           ))}
         </ul>

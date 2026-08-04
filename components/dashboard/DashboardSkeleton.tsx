@@ -1,8 +1,9 @@
 import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
 
-// Mirrors Dashboard.tsx's Phase 10B layout (greeting, hero card, key
-// metrics row, weekly progress, coach insight, goals, recent activity) so
-// the page doesn't shift once real data replaces it.
+// Mirrors Dashboard.tsx's layout (greeting, hero card, compact key metrics
+// row, weekly progress, coach insight, goals, recent activity) so the page
+// doesn't shift once real data replaces it. The metrics row height (h-20 =
+// 80px) matches PART 1's ~72-88px compact StatsCard target.
 export default function DashboardSkeleton() {
   return (
     <div role="status" aria-label="Loading dashboard" className="flex flex-col gap-6">
@@ -14,7 +15,7 @@ export default function DashboardSkeleton() {
 
       <SkeletonCard className="h-40" />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <SkeletonCard key={i} className="h-20" />
         ))}

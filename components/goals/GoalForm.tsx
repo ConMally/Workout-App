@@ -4,6 +4,10 @@ import { useState } from "react";
 import type { Goal, GoalType } from "@/types/goals";
 import { GoalTypeEnum } from "@/types/goals";
 import { GOAL_TYPE_LABELS, suggestGoalTitle } from "@/lib/goals";
+import Button from "@/components/ui/Button";
+
+const FIELD_CLASS =
+  "h-[var(--control-height)] rounded-[var(--control-radius)] border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30";
 
 interface GoalFormProps {
   initialGoal?: Goal | null;
@@ -57,14 +61,10 @@ export default function GoalForm({ initialGoal, exerciseNames, onSubmit, onCance
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+      <label className="flex flex-col gap-1 text-sm font-medium text-text-secondary">
         Goal type
-        <select
-          value={type}
-          onChange={(e) => handleTypeChange(e.target.value as GoalType)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-        >
+        <select value={type} onChange={(e) => handleTypeChange(e.target.value as GoalType)} className={FIELD_CLASS}>
           {GoalTypeEnum.options.map((t) => (
             <option key={t} value={t}>
               {GOAL_TYPE_LABELS[t]}
@@ -74,7 +74,7 @@ export default function GoalForm({ initialGoal, exerciseNames, onSubmit, onCance
       </label>
 
       {needsExercise && (
-        <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+        <label className="flex flex-col gap-1 text-sm font-medium text-text-secondary">
           Exercise
           {exerciseNames.length > 0 ? (
             <select
@@ -83,7 +83,7 @@ export default function GoalForm({ initialGoal, exerciseNames, onSubmit, onCance
                 setExerciseName(e.target.value);
                 if (!titleTouched) setTitle(suggestGoalTitle(type, e.target.value, targetValue));
               }}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              className={FIELD_CLASS}
             >
               {exerciseNames.map((name) => (
                 <option key={name} value={name}>
@@ -97,24 +97,18 @@ export default function GoalForm({ initialGoal, exerciseNames, onSubmit, onCance
               value={exerciseName ?? ""}
               onChange={(e) => setExerciseName(e.target.value)}
               placeholder="e.g. Barbell Bench Press"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              className={FIELD_CLASS}
             />
           )}
         </label>
       )}
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+      <label className="flex flex-col gap-1 text-sm font-medium text-text-secondary">
         Target value
-        <input
-          type="number"
-          min={1}
-          value={targetValue}
-          onChange={(e) => handleTargetChange(Number(e.target.value))}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-        />
+        <input type="number" min={1} value={targetValue} onChange={(e) => handleTargetChange(Number(e.target.value))} className={FIELD_CLASS} />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+      <label className="flex flex-col gap-1 text-sm font-medium text-text-secondary">
         Title
         <input
           type="text"
@@ -124,31 +118,22 @@ export default function GoalForm({ initialGoal, exerciseNames, onSubmit, onCance
             setTitleTouched(true);
           }}
           maxLength={120}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          className={FIELD_CLASS}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+      <label className="flex flex-col gap-1 text-sm font-medium text-text-secondary">
         Target date (optional)
-        <input
-          type="date"
-          value={targetDate}
-          onChange={(e) => setTargetDate(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-        />
+        <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className={FIELD_CLASS} />
       </label>
 
       <div className="flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-        >
+        <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
-        </button>
-        <button type="submit" className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700">
+        </Button>
+        <Button type="submit" variant="primary">
           {initialGoal ? "Save changes" : "Create goal"}
-        </button>
+        </Button>
       </div>
     </form>
   );

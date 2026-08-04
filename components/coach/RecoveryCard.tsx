@@ -4,11 +4,16 @@ import type { RecoveryResult, RecoveryStatus } from "@/types/analytics";
 // the only indicator of status (see PART 11 accessibility requirement).
 // Exported so components/dashboard/KeyMetrics.tsx's compact recovery tile
 // uses the exact same labels/icons instead of a second copy.
+// Only 3 semantic tones exist in the design system (accent/warning/danger)
+// for 4 recovery states — moderate and fatigued share the warning tone,
+// distinguished by their icon and label (never color alone, per PART 14),
+// which also means every state gets dark mode for free via tokens instead
+// of a fifth hand-maintained color pairing.
 export const RECOVERY_STATUS_META: Record<RecoveryStatus, { label: string; icon: string; className: string }> = {
-  recovered: { label: "Recovered", icon: "✅", className: "border-teal-200 bg-teal-50 text-teal-800" },
-  moderate: { label: "Moderate", icon: "🟡", className: "border-amber-200 bg-amber-50 text-amber-800" },
-  fatigued: { label: "Fatigued", icon: "🟠", className: "border-orange-200 bg-orange-50 text-orange-800" },
-  overreaching: { label: "Overreaching", icon: "🔴", className: "border-red-200 bg-red-50 text-red-800" },
+  recovered: { label: "Recovered", icon: "✅", className: "border-accent/30 bg-accent-soft text-accent" },
+  moderate: { label: "Moderate", icon: "🟡", className: "border-warning/30 bg-warning-soft text-warning" },
+  fatigued: { label: "Fatigued", icon: "🟠", className: "border-warning/30 bg-warning-soft text-warning" },
+  overreaching: { label: "Overreaching", icon: "🔴", className: "border-danger/30 bg-danger-soft text-danger" },
 };
 
 interface RecoveryCardProps {
@@ -19,8 +24,8 @@ export default function RecoveryCard({ recovery }: RecoveryCardProps) {
   const meta = RECOVERY_STATUS_META[recovery.status];
 
   return (
-    <div className={`rounded-2xl border p-5 shadow-sm sm:p-6 ${meta.className}`}>
-      <h3 className="text-sm font-semibold uppercase tracking-wide opacity-80">Recovery status</h3>
+    <div className={`rounded-[var(--card-radius)] border p-5 shadow-sm sm:p-6 ${meta.className}`}>
+      <h3 className="text-xs font-semibold uppercase tracking-wide opacity-80">Recovery status</h3>
       <div className="mt-2 flex items-center gap-2">
         <span aria-hidden="true" className="text-xl">
           {meta.icon}

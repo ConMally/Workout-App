@@ -4,9 +4,9 @@ interface InjuryWarningProps {
 
 export default function InjuryWarning({ message }: InjuryWarningProps) {
   return (
-    <div className="flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 sm:p-5">
+    <div className="flex gap-3 rounded-[var(--card-radius)] border border-danger/30 bg-danger-soft p-4 sm:p-5">
       <span
-        className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600"
+        className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-danger/15 text-danger"
         aria-hidden="true"
       >
         <svg
@@ -23,8 +23,8 @@ export default function InjuryWarning({ message }: InjuryWarningProps) {
         </svg>
       </span>
       <div>
-        <h3 className="text-sm font-semibold text-red-900">Please read before starting</h3>
-        <p className="mt-1 text-sm leading-relaxed text-red-800">{message}</p>
+        <h3 className="text-sm font-semibold text-danger">Please read before starting</h3>
+        <p className="mt-1 text-sm leading-relaxed text-danger">{message}</p>
       </div>
     </div>
   );

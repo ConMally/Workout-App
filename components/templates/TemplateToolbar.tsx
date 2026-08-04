@@ -37,11 +37,11 @@ export default function TemplateToolbar({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Search by name, day, or exercise…"
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          className="h-[var(--control-height)] w-full rounded-[var(--control-radius)] border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
         />
       </div>
 
-      <div role="group" aria-label="Filter templates" className="flex gap-1 rounded-lg border border-slate-200 p-1">
+      <div role="group" aria-label="Filter templates" className="flex gap-1 rounded-[var(--control-radius)] border border-border p-1">
         {(["all", "favorites"] as TemplateFilter[]).map((option) => (
           <button
             key={option}
@@ -49,7 +49,7 @@ export default function TemplateToolbar({
             onClick={() => onFilterChange(option)}
             aria-pressed={filter === option}
             className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-              filter === option ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-50"
+              filter === option ? "bg-accent text-accent-foreground" : "text-text-secondary hover:bg-surface-muted"
             }`}
           >
             {option === "all" ? "All" : "Favorites"}
@@ -57,12 +57,12 @@ export default function TemplateToolbar({
         ))}
       </div>
 
-      <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+      <label className="flex items-center gap-2 text-xs font-medium text-text-secondary">
         Sort
         <select
           value={sort}
           onChange={(e) => onSortChange(e.target.value as TemplateSortMode)}
-          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          className="rounded-[var(--control-radius)] border border-border bg-surface px-2.5 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
         >
           {SORT_MODES.map((mode) => (
             <option key={mode} value={mode}>

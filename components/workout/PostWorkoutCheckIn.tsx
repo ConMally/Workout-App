@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Readiness } from "@/types/workout-log";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
 
 interface RatingFieldConfig {
   key: keyof Readiness;
@@ -45,27 +47,27 @@ export default function PostWorkoutCheckIn({ onSave, onSkip }: PostWorkoutCheckI
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">How did that feel?</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="text-page-title text-text-primary">How did that feel?</h2>
+        <p className="mt-1 text-supporting">
           Optional — rate as many or as few of these as you like. Used only to show you your own trends over time.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col divide-y divide-slate-100">
+      <Card>
+        <div className="flex flex-col divide-y divide-border">
           {FIELDS.map((field) => {
             const value = values[field.key];
             const included = value !== null;
             return (
               <div key={field.key} className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-slate-800">{field.label}</span>
-                  <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span className="text-sm font-semibold text-text-primary">{field.label}</span>
+                  <label className="flex items-center gap-1.5 text-xs text-text-muted">
                     <input
                       type="checkbox"
                       checked={included}
                       onChange={(e) => toggleIncluded(field.key, e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-slate-300 accent-teal-600"
+                      className="h-3.5 w-3.5 rounded border-border accent-accent"
                     />
                     Rate this
                   </label>
@@ -81,11 +83,11 @@ export default function PostWorkoutCheckIn({ onSave, onSkip }: PostWorkoutCheckI
                       value={value}
                       onChange={(e) => setValue(field.key, Number(e.target.value))}
                       aria-label={field.label}
-                      className="w-full accent-teal-600"
+                      className="w-full accent-accent"
                     />
-                    <div className="flex items-center justify-between text-xs text-slate-400">
+                    <div className="flex items-center justify-between text-xs text-text-muted">
                       <span>{field.lowLabel}</span>
-                      <span className="font-semibold text-teal-700">{value} / 10</span>
+                      <span className="font-semibold text-accent">{value} / 10</span>
                       <span>{field.highLabel}</span>
                     </div>
                   </>
@@ -94,18 +96,19 @@ export default function PostWorkoutCheckIn({ onSave, onSkip }: PostWorkoutCheckI
             );
           })}
         </div>
-      </div>
+      </Card>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+          className="text-sm font-medium text-text-muted underline-offset-2 hover:text-text-secondary hover:underline"
         >
           Skip check-in
         </button>
-        <button
+        <Button
           type="button"
+          variant="primary"
           onClick={() =>
             onSave({
               difficulty: values.difficulty,
@@ -115,10 +118,9 @@ export default function PostWorkoutCheckIn({ onSave, onSkip }: PostWorkoutCheckI
               satisfaction: values.satisfaction,
             })
           }
-          className="rounded-lg bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
         >
           Save & Finish
-        </button>
+        </Button>
       </div>
     </div>
   );

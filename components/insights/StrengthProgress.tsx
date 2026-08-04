@@ -23,9 +23,9 @@ export default function StrengthProgress({
 }: StrengthProgressProps) {
   if (exerciseNames.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Strength progress</h3>
-        <p className="mt-2 text-sm text-slate-400">
+      <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <h3 className="text-label">Strength progress</h3>
+        <p className="mt-2 text-sm text-text-muted">
           Log the same exercise across a couple of workouts to see strength trends here.
         </p>
       </div>
@@ -43,13 +43,13 @@ export default function StrengthProgress({
       .map((p) => ({ label: formatDate(p.completedAt), value: p.estimatedOneRepMax as number })) ?? [];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Strength progress</h3>
+        <h3 className="text-label">Strength progress</h3>
         <select
           value={selectedExercise ?? ""}
           onChange={(e) => onSelectExercise(e.target.value)}
-          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          className="rounded-[var(--control-radius)] border border-border bg-surface px-2.5 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
         >
           {exerciseNames.map((name) => (
             <option key={name} value={name}>
@@ -77,7 +77,7 @@ export default function StrengthProgress({
           <button
             type="button"
             onClick={() => onViewFullHistory(stats.exerciseName)}
-            className="mt-4 text-sm font-medium text-teal-700 hover:underline"
+            className="mt-4 text-sm font-medium text-accent hover:underline"
           >
             View full exercise history →
           </button>
@@ -89,9 +89,9 @@ export default function StrengthProgress({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2">
-      <p className="text-xs font-medium text-slate-400">{label}</p>
-      <p className="mt-0.5 text-sm font-bold text-slate-900">{value}</p>
+    <div className="rounded-[var(--control-radius)] bg-surface-muted px-3 py-2">
+      <p className="text-xs font-medium text-text-muted">{label}</p>
+      <p className="mt-0.5 text-sm font-bold text-text-primary">{value}</p>
     </div>
   );
 }

@@ -19,7 +19,7 @@ const PADDING = 10;
 // requirement.
 export default function MiniLineChart({ points, unit = "", ariaLabel }: MiniLineChartProps) {
   if (points.length < 2) {
-    return <p className="text-sm text-slate-400">Not enough data points yet to chart a trend.</p>;
+    return <p className="text-sm text-text-muted">Not enough data points yet to chart a trend.</p>;
   }
 
   const values = points.map((p) => p.value);
@@ -47,7 +47,7 @@ export default function MiniLineChart({ points, unit = "", ariaLabel }: MiniLine
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
         aria-label={ariaLabel}
-        className="w-full text-teal-600"
+        className="w-full text-accent"
         preserveAspectRatio="none"
       >
         <polyline points={path} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -55,7 +55,7 @@ export default function MiniLineChart({ points, unit = "", ariaLabel }: MiniLine
           <circle key={i} cx={c.x} cy={c.y} r={2.5} fill="currentColor" />
         ))}
       </svg>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-text-muted">
         From {first.value}
         {unit} ({first.label}) to {last.value}
         {unit} ({last.label}){changeText}

@@ -17,6 +17,7 @@ import { useSwipeGesture } from "@/lib/useSwipeGesture";
 import FocusedExercise from "./FocusedExercise";
 import WorkoutOverviewDrawer from "./WorkoutOverviewDrawer";
 import RestTimer, { type RestTimerTrigger } from "./RestTimer";
+import Button from "@/components/ui/Button";
 
 // Small circular sets-completed ring for the current exercise, next to the
 // "Exercise X of Y" label — PART 6's "exercise progress ring."
@@ -29,7 +30,7 @@ function ExerciseProgressRing({ completed, total }: { completed: number; total: 
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="flex-shrink-0" aria-hidden="true">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={strokeWidth} className="stroke-slate-200 dark:stroke-slate-700" />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={strokeWidth} className="stroke-[var(--border)]" />
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -40,7 +41,7 @@ function ExerciseProgressRing({ completed, total }: { completed: number; total: 
         strokeDasharray={circumference}
         strokeDashoffset={circumference * (1 - fraction)}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        className="stroke-teal-500 motion-safe:transition-all motion-safe:duration-500"
+        className="stroke-[var(--accent)] motion-safe:transition-all motion-safe:duration-500"
       />
     </svg>
   );
@@ -167,51 +168,43 @@ export default function ActiveWorkout({
   // gives them a way back instead of a dead screen.
   if (!activeExercise) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900/40">
-        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">This workout has no exercises to show.</p>
-        <button
-          type="button"
-          onClick={handleDiscard}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
-        >
+      <div className="flex flex-col items-center gap-3 rounded-[var(--card-radius)] border border-dashed border-border bg-surface-muted/60 px-6 py-10 text-center">
+        <p className="text-sm font-medium text-text-secondary">This workout has no exercises to show.</p>
+        <Button type="button" variant="secondary" onClick={handleDiscard}>
           Discard workout
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-4">
-      <div className="sticky top-0 z-20 flex flex-col gap-3 bg-slate-50 pb-3 pt-1 dark:bg-slate-950">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-900">
+      <div className="sticky top-0 z-20 flex flex-col gap-3 bg-background pb-3 pt-1">
+        <div className="rounded-[var(--card-radius)] border border-border bg-surface p-4 shadow-sm sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <span className="text-xs font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400">{workout.dayLabel}</span>
-              <h1 className="mt-0.5 truncate text-xl font-bold text-slate-900 dark:text-slate-100">{workout.dayTitle}</h1>
+              <span className="text-eyebrow">{workout.dayLabel}</span>
+              <h1 className="mt-0.5 truncate text-section-heading text-text-primary">{workout.dayTitle}</h1>
             </div>
             <div className="flex flex-shrink-0 items-center gap-3">
               <span
-                className="font-mono text-sm font-semibold tabular-nums text-slate-600 dark:text-slate-300"
+                className="font-mono text-sm font-semibold tabular-nums text-text-secondary"
                 aria-label={`Elapsed time ${formatElapsedClock(elapsedSeconds)}`}
               >
                 {formatElapsedClock(elapsedSeconds)}
               </span>
-              <button
-                type="button"
-                onClick={handleFinish}
-                className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-95 hover:bg-teal-700"
-              >
+              <Button type="button" variant="primary" size="sm" onClick={handleFinish}>
                 Finish Workout
-              </button>
+              </Button>
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
             <span>
               {progress.completedExercises}/{progress.totalExercises} exercises · {progress.completedSets}/
               {progress.totalSets} sets
             </span>
-            <button type="button" onClick={() => setOverviewOpen(true)} className="font-medium text-teal-700 hover:underline dark:text-teal-400">
+            <button type="button" onClick={() => setOverviewOpen(true)} className="font-medium text-accent hover:underline">
               View full workout
             </button>
           </div>
@@ -226,24 +219,24 @@ export default function ActiveWorkout({
                 key={i}
                 aria-hidden="true"
                 className={`h-1.5 flex-1 rounded-full motion-safe:transition-colors motion-safe:duration-300 ${
-                  exercise.completed ? "bg-teal-500" : i === nav.activeIndex ? "bg-teal-200 dark:bg-teal-800" : "bg-slate-200 dark:bg-slate-700"
+                  exercise.completed ? "bg-accent" : i === nav.activeIndex ? "bg-accent/40" : "bg-surface-muted"
                 }`}
               />
             ))}
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center justify-between gap-2 rounded-[var(--card-radius)] border border-border bg-surface p-2 shadow-sm">
           <button
             type="button"
             onClick={nav.goPrevious}
             disabled={!nav.canGoPrevious}
             aria-label="Previous exercise"
-            className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition active:scale-95 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="flex items-center gap-1 rounded-[var(--control-radius)] px-3 py-2 text-sm font-medium text-text-secondary transition active:scale-95 hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-30"
           >
             ← Previous
           </button>
-          <span className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+          <span className="flex items-center gap-2 text-sm font-semibold text-text-secondary">
             <ExerciseProgressRing completed={activeExerciseCompletion.completedSets} total={activeExerciseCompletion.totalSets} />
             Exercise {nav.activeIndex + 1} of {workout.exercises.length}
           </span>
@@ -252,7 +245,7 @@ export default function ActiveWorkout({
             onClick={nav.goNext}
             disabled={!nav.canGoNext}
             aria-label="Next exercise"
-            className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition active:scale-95 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="flex items-center gap-1 rounded-[var(--control-radius)] px-3 py-2 text-sm font-medium text-text-secondary transition active:scale-95 hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-30"
           >
             Next →
           </button>
@@ -272,7 +265,7 @@ export default function ActiveWorkout({
       </div>
 
       {motivationalMessage && (
-        <p className="motion-safe:animate-step-in text-center text-sm font-medium text-teal-700 dark:text-teal-400">
+        <p className="motion-safe:animate-step-in text-center text-sm font-medium text-accent">
           {motivationalMessage}
         </p>
       )}
@@ -295,21 +288,17 @@ export default function ActiveWorkout({
         />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
         <button
           type="button"
           onClick={handleDiscard}
-          className="text-sm font-medium text-slate-500 underline-offset-2 transition hover:text-red-600 hover:underline dark:text-slate-400 dark:hover:text-red-400"
+          className="text-sm font-medium text-text-muted underline-offset-2 transition hover:text-danger hover:underline"
         >
           Discard workout
         </button>
-        <button
-          type="button"
-          onClick={handleFinish}
-          className="rounded-lg bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition active:scale-95 hover:bg-teal-700"
-        >
+        <Button type="button" variant="primary" onClick={handleFinish}>
           Finish Workout
-        </button>
+        </Button>
       </div>
 
       {overviewOpen && (

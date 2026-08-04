@@ -1,7 +1,10 @@
+import { useMemo } from "react";
 import type { CompletedWorkout, PersonalRecordEvent, WeightUnit } from "@/types/workout-log";
-import { countCompletedExercises, countCompletedSets, formatDate, formatDuration } from "@/lib/workout-log";
+import { countCompletedExercises, countCompletedSets, formatDate, formatDuration, getWorkoutVolume } from "@/lib/workout-log";
+import { getAllPersonalRecords } from "@/lib/dashboard";
 import WorkoutHistoryDetail from "./WorkoutHistoryDetail";
 import PRCelebration from "../PRCelebration";
+import EmptyState from "@/components/EmptyState";
 
 interface WorkoutHistoryProps {
   history: CompletedWorkout[];
@@ -23,6 +26,20 @@ export default function WorkoutHistory({
   onSelectExercise,
 }: WorkoutHistoryProps) {
   const selected = history.find((workout) => workout.id === selectedId) ?? null;
+
+  // PART 6: PR count per workout, cross-referenced by exact completedAt
+  // match — getAllPersonalRecords already reconstructs every PR event from
+  // this same `history` prop, so this is a pure derivation, not a new
+  // analytics computation.
+  const prCountByWorkoutId = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const event of getAllPersonalRecords(history)) {
+      const workout = history.find((w) => w.completedAt === event.completedAt);
+      if (workout) counts.set(workout.id, (counts.get(workout.id) ?? 0) + 1);
+    }
+    return counts;
+  }, [history]);
+
   if (selected) {
     return (
       <WorkoutHistoryDetail
@@ -39,52 +56,56 @@ export default function WorkoutHistory({
       <PRCelebration events={recentPRs} onDismiss={onDismissPRs} />
 
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Workout history</h2>
-        <p className="mt-1 text-sm text-slate-500">Review what you&apos;ve completed.</p>
+        <h2 className="text-page-title text-text-primary">Workout history</h2>
+        <p className="mt-1 text-supporting">Review what you&apos;ve completed.</p>
       </div>
 
       {history.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-10 text-center">
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-50 text-teal-600"
-            aria-hidden="true"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 8v4l2.5 2.5" />
-              <circle cx="12" cy="12" r="9" />
-            </svg>
-          </span>
-          <p className="text-sm font-medium text-slate-600">No workouts completed yet</p>
-          <p className="max-w-xs text-sm text-slate-400">
-            Start a workout from your plan and finish it to see it here.
-          </p>
-        </div>
+        <EmptyState
+          title="No workouts completed yet"
+          message="Start a workout from your plan and finish it to see it here."
+        />
       ) : (
-        <ul className="flex flex-col gap-3">
-          {history.map((workout) => (
-            <li key={workout.id}>
-              <button
-                type="button"
-                onClick={() => onSelect(workout.id)}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-teal-300 hover:shadow-md"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-medium text-slate-400">{formatDate(workout.completedAt)}</p>
-                    <p className="mt-0.5 text-lg font-bold text-slate-900">{workout.dayTitle}</p>
-                    <p className="text-sm text-slate-500">{workout.dayFocus}</p>
+        <ul className="flex flex-col gap-2">
+          {history.map((workout) => {
+            const volume = getWorkoutVolume(workout.exercises);
+            const prCount = prCountByWorkoutId.get(workout.id) ?? 0;
+            const exercisesDone = countCompletedExercises(workout.exercises);
+            const setsDone = countCompletedSets(workout.exercises);
+            const isComplete = exercisesDone === workout.exercises.length;
+
+            return (
+              <li key={workout.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(workout.id)}
+                  className="flex w-full items-center gap-3 rounded-[var(--card-radius)] border border-border bg-surface p-4 text-left shadow-sm transition hover:border-accent/40 hover:shadow-md"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <p className="text-card-title text-text-primary">{workout.dayTitle}</p>
+                      <p className="text-xs text-text-muted">{formatDate(workout.completedAt)}</p>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted">
+                      <span>{formatDuration(workout.durationSeconds)}</span>
+                      {volume > 0 && <span>{volume.toLocaleString()} vol</span>}
+                      <span>
+                        {setsDone} set{setsDone === 1 ? "" : "s"}
+                      </span>
+                      {prCount > 0 && <span className="font-semibold text-accent">🏆 {prCount} PR{prCount === 1 ? "" : "s"}</span>}
+                    </div>
                   </div>
-                  <span className="flex-shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                    {formatDuration(workout.durationSeconds)}
+                  <span
+                    className={`flex-shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      isComplete ? "bg-success-soft text-success" : "bg-surface-muted text-text-secondary"
+                    }`}
+                  >
+                    {isComplete ? "Complete" : `${exercisesDone}/${workout.exercises.length}`}
                   </span>
-                </div>
-                <div className="mt-3 flex gap-4 text-xs text-slate-500">
-                  <span>{countCompletedExercises(workout.exercises)} exercises completed</span>
-                  <span>{countCompletedSets(workout.exercises)} sets completed</span>
-                </div>
-              </button>
-            </li>
-          ))}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

@@ -20,7 +20,7 @@ export default function FeedbackButton({ currentPage }: FeedbackButtonProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-lg transition active:scale-95 hover:border-teal-300 hover:text-teal-700 sm:bottom-6 sm:right-6 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-teal-700"
+        className="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-medium text-text-secondary shadow-lg transition motion-safe:active:scale-95 hover:border-accent/40 hover:text-accent sm:bottom-6 sm:right-6"
       >
         <span aria-hidden="true">💬</span>
         Feedback

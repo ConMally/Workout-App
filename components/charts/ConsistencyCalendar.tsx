@@ -47,13 +47,17 @@ export default function ConsistencyCalendar({ history, weeks = 18 }: Consistency
   const width = columns.length * (CELL + GAP);
   const height = 7 * (CELL + GAP);
 
+  // Uses the accent token at graded opacity (rather than hardcoded hex
+  // shades) so every cell — including the "0 workouts" background — stays
+  // correct in dark mode automatically, no separate dark: palette to
+  // maintain (PART 11).
   function shade(count: number): string {
-    if (count === 0) return "#e2e8f0"; // slate-200
+    if (count === 0) return "var(--border)";
     const intensity = Math.min(1, count / maxCount);
-    if (intensity > 0.75) return "#0f766e"; // teal-700
-    if (intensity > 0.5) return "#0d9488"; // teal-600
-    if (intensity > 0.25) return "#5eead4"; // teal-300
-    return "#99f6e4"; // teal-200
+    if (intensity > 0.75) return "var(--accent)";
+    if (intensity > 0.5) return "color-mix(in srgb, var(--accent) 75%, transparent)";
+    if (intensity > 0.25) return "color-mix(in srgb, var(--accent) 50%, transparent)";
+    return "color-mix(in srgb, var(--accent) 30%, transparent)";
   }
 
   const totalWorkouts = days.reduce((s, d) => s + d.count, 0);
@@ -88,17 +92,17 @@ export default function ConsistencyCalendar({ history, weeks = 18 }: Consistency
           ))
         )}
       </svg>
-      <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+      <div className="mt-2 flex items-center justify-between text-xs text-text-muted">
         <span>
           {totalWorkouts} workout{totalWorkouts === 1 ? "" : "s"} across {activeDays} active day
           {activeDays === 1 ? "" : "s"} (last {weeks} weeks)
         </span>
         <div className="flex items-center gap-1" aria-hidden="true">
-          <span className="text-[10px] text-slate-400">Less</span>
-          {["#e2e8f0", "#99f6e4", "#5eead4", "#0d9488", "#0f766e"].map((color) => (
-            <span key={color} className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
+          <span className="text-[10px] text-text-muted">Less</span>
+          {[0, 0.3, 0.5, 0.8, 1].map((fraction) => (
+            <span key={fraction} className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: shade(fraction * maxCount) }} />
           ))}
-          <span className="text-[10px] text-slate-400">More</span>
+          <span className="text-[10px] text-text-muted">More</span>
         </div>
       </div>
       <span className="sr-only">{DAY_LABELS.join(", ")}</span>

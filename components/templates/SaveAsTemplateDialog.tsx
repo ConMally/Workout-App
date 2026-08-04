@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import Button from "@/components/ui/Button";
 
 interface SaveAsTemplateDialogProps {
   saving: boolean;
@@ -29,7 +30,7 @@ export default function SaveAsTemplateDialog({ saving, errorMessage, onSave, onC
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4" role="presentation" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="presentation" onClick={onCancel}>
       <form
         ref={dialogRef}
         onSubmit={handleSubmit}
@@ -37,14 +38,14 @@ export default function SaveAsTemplateDialog({ saving, errorMessage, onSave, onC
         aria-modal="true"
         aria-labelledby="save-as-template-title"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-lg sm:p-6"
+        className="motion-safe:animate-scale-in w-full max-w-sm rounded-[var(--card-radius)] border border-border bg-surface-elevated p-5 shadow-lg sm:p-6"
       >
-        <h3 id="save-as-template-title" className="text-lg font-semibold text-slate-900">
+        <h3 id="save-as-template-title" className="text-section-heading text-text-primary">
           Save as template
         </h3>
-        <p className="mt-1 text-sm text-slate-500">Reuse this workout plan later from the Templates tab.</p>
+        <p className="mt-1 text-supporting">Reuse this workout plan later from the Templates tab.</p>
 
-        <label className="mt-4 flex flex-col gap-1 text-sm font-medium text-slate-700">
+        <label className="mt-4 flex flex-col gap-1 text-sm font-medium text-text-secondary">
           Template name
           <input
             type="text"
@@ -52,41 +53,32 @@ export default function SaveAsTemplateDialog({ saving, errorMessage, onSave, onC
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={120}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+            className="h-[var(--control-height)] rounded-[var(--control-radius)] border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
           />
         </label>
 
-        <label className="mt-3 flex flex-col gap-1 text-sm font-medium text-slate-700">
+        <label className="mt-3 flex flex-col gap-1 text-sm font-medium text-text-secondary">
           Description (optional)
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={1000}
             rows={2}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+            className="rounded-[var(--control-radius)] border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
           />
         </label>
 
         {(validationError || errorMessage) && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{validationError ?? errorMessage}</p>
+          <p className="mt-3 rounded-[var(--control-radius)] bg-danger-soft px-3 py-2 text-xs text-danger">{validationError ?? errorMessage}</p>
         )}
 
         <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={saving}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" variant="primary" loading={saving}>
             {saving ? "Saving…" : "Save template"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

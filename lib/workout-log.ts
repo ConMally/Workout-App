@@ -61,6 +61,21 @@ export function countCompletedExercises(exercises: LoggedExercise[]): number {
   return exercises.filter((exercise) => exercise.completed).length;
 }
 
+// Same weighted-volume formula as lib/insights.ts#weekVolume (weight ×
+// reps, completed sets only, never invents a weight) but for a single
+// workout — PART 6's History timeline volume column reuses this rather
+// than duplicating the math inline in a component.
+export function getWorkoutVolume(exercises: LoggedExercise[]): number {
+  let total = 0;
+  for (const exercise of exercises) {
+    for (const set of exercise.sets) {
+      if (!set.completed || set.weight === null || set.weight <= 0 || set.reps === null || set.reps <= 0) continue;
+      total += set.weight * set.reps;
+    }
+  }
+  return Math.round(total);
+}
+
 // ---------------------------------------------------------------------------
 // Phase 6.1 focused-exercise helpers — pure derivations over an
 // ActiveWorkout's exercises, kept here (not in components) per this app's

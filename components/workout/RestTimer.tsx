@@ -116,19 +116,19 @@ export default function RestTimer({
   const presets = Array.from(new Set([defaultSeconds, ...OTHER_PRESETS]));
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-md dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-4 shadow-md">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
             className={`font-mono text-2xl font-bold tabular-nums transition-colors ${
-              isLowTime ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-slate-100"
+              isLowTime ? "text-warning" : "text-text-primary"
             }`}
             role="timer"
             aria-live="off"
           >
             {display}
           </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400">Rest timer</span>
+          <span className="text-xs text-text-muted">Rest timer</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {presets.map((preset) => (
@@ -138,8 +138,8 @@ export default function RestTimer({
               onClick={() => handlePreset(preset)}
               className={`rounded-full border px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
                 preset === defaultSeconds
-                  ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
-                  : "border-slate-200 text-slate-600 hover:border-teal-300 hover:bg-teal-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  ? "border-accent/40 bg-accent-soft text-accent"
+                  : "border-border text-text-secondary hover:border-accent/40 hover:bg-accent-soft"
               }`}
             >
               {preset}s
@@ -149,10 +149,10 @@ export default function RestTimer({
       </div>
 
       {totalSeconds > 0 && (
-        <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+        <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
           <div
             className={`h-full rounded-full motion-safe:transition-all motion-safe:duration-1000 motion-safe:ease-linear ${
-              isLowTime ? "bg-amber-500" : "bg-teal-500"
+              isLowTime ? "bg-warning" : "bg-accent"
             }`}
             style={{ width: `${progress * 100}%` }}
           />
@@ -165,7 +165,7 @@ export default function RestTimer({
             <button
               type="button"
               onClick={handlePause}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition active:scale-95 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-[var(--control-radius)] border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition active:scale-95 hover:bg-surface-muted"
             >
               Pause
             </button>
@@ -174,7 +174,7 @@ export default function RestTimer({
             <button
               type="button"
               onClick={handleResume}
-              className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white transition active:scale-95 hover:bg-teal-700"
+              className="rounded-[var(--control-radius)] bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground transition active:scale-95 hover:bg-accent-hover"
             >
               Resume
             </button>
@@ -182,18 +182,18 @@ export default function RestTimer({
           <button
             type="button"
             onClick={handleReset}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition active:scale-95 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="rounded-[var(--control-radius)] border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition active:scale-95 hover:bg-surface-muted"
           >
             Reset
           </button>
         </div>
 
-        <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <label className="flex items-center gap-1.5 text-xs text-text-muted">
           <input
             type="checkbox"
             checked={autoStartEnabled}
             onChange={(e) => onToggleAutoStart(e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-slate-300 accent-teal-600"
+            className="h-3.5 w-3.5 rounded border-border accent-accent"
           />
           Auto-start after each set
         </label>

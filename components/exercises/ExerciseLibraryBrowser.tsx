@@ -68,8 +68,8 @@ export default function ExerciseLibraryBrowser({ history, weightUnit, favoriteId
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Exercises</h2>
-        <p className="mt-1 text-sm text-slate-500">Browse, search, and favorite exercises from the library.</p>
+        <h2 className="text-page-title text-text-primary">Exercises</h2>
+        <p className="mt-1 text-supporting">Browse, search, and favorite exercises from the library.</p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -82,11 +82,11 @@ export default function ExerciseLibraryBrowser({ history, weightUnit, favoriteId
           value={filters.query}
           onChange={(e) => updateFilter("query", e.target.value)}
           placeholder="Search by name, muscle, or movement…"
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          className="h-[var(--control-height)] w-full rounded-[var(--control-radius)] border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
         />
 
         <div className="flex flex-wrap gap-2">
-          <div role="group" aria-label="Quick filters" className="flex gap-1 rounded-lg border border-slate-200 p-1">
+          <div role="group" aria-label="Quick filters" className="flex gap-1 rounded-[var(--control-radius)] border border-border p-1">
             {(["all", "favorites", "recent"] as QuickFilter[]).map((option) => (
               <button
                 key={option}
@@ -94,7 +94,7 @@ export default function ExerciseLibraryBrowser({ history, weightUnit, favoriteId
                 onClick={() => setQuickFilter(option)}
                 aria-pressed={quickFilter === option}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                  quickFilter === option ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-50"
+                  quickFilter === option ? "bg-accent text-accent-foreground" : "text-text-secondary hover:bg-surface-muted"
                 }`}
               >
                 {option === "all" ? "All" : option === "favorites" ? "Favorites" : "Recently used"}
@@ -190,13 +190,13 @@ function FilterSelect<T extends string>({
   options: { value: string; label: string }[];
 }) {
   return (
-    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+    <label className="flex items-center gap-1.5 text-xs font-medium text-text-secondary">
       <span className="sr-only">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
-        className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm capitalize text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+        className="rounded-[var(--control-radius)] border border-border bg-surface px-2.5 py-1.5 text-sm capitalize text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
       >
         <option value="all">{label}: All</option>
         {options.map((option) => (

@@ -24,8 +24,8 @@ interface TemplateExerciseEditorProps {
 }
 
 const inputClass =
-  "rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30";
-const errorInputClass = "border-red-300 focus:border-red-400 focus:ring-red-500/30";
+  "rounded-[var(--control-radius)] border border-border bg-surface px-2.5 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30";
+const errorInputClass = "border-danger focus:border-danger focus:ring-danger/30";
 
 // PART 1: the exercise identity itself is no longer a free-text field —
 // it's resolved (id first, name/alias fallback — see
@@ -61,23 +61,23 @@ export default function TemplateExerciseEditor({
   const definition = resolveExerciseDefinition(exercise.exerciseId, exercise.name);
 
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:grid-cols-6">
+    <div className="grid grid-cols-2 gap-2 rounded-[var(--control-radius)] border border-border bg-surface-muted/60 p-3 sm:grid-cols-6">
       <div className="col-span-2 flex flex-col gap-1 sm:col-span-2">
-        <span id={`exercise-${index}-name-label`} className="text-xs font-medium text-slate-600">
+        <span id={`exercise-${index}-name-label`} className="text-xs font-medium text-text-secondary">
           Exercise
         </span>
         <div
-          className={`flex flex-col gap-1.5 rounded-lg border bg-white px-2.5 py-1.5 ${nameError ? errorInputClass : "border-slate-200"}`}
+          className={`flex flex-col gap-1.5 rounded-[var(--control-radius)] border bg-surface px-2.5 py-1.5 ${nameError ? errorInputClass : "border-border"}`}
           aria-labelledby={`exercise-${index}-name-label`}
           aria-invalid={Boolean(nameError)}
           aria-describedby={nameError ? `exercise-${index}-name-error` : undefined}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="truncate text-sm font-semibold text-slate-900">{exercise.name}</span>
+            <span className="truncate text-sm font-semibold text-text-primary">{exercise.name}</span>
             <button
               type="button"
               onClick={onReplace}
-              className="flex-shrink-0 text-xs font-medium text-teal-700 hover:underline"
+              className="flex-shrink-0 text-xs font-medium text-accent hover:underline"
             >
               Change
             </button>
@@ -85,34 +85,34 @@ export default function TemplateExerciseEditor({
 
           {definition ? (
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-medium capitalize text-teal-800">
+              <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium capitalize text-accent">
                 {MUSCLE_GROUP_LABELS[definition.primaryMuscle]}
               </span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium capitalize text-slate-600">
+              <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-medium capitalize text-text-secondary">
                 {definition.equipment[0]?.replace(/_/g, " ")}
               </span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium capitalize text-slate-600">
+              <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-medium capitalize text-text-secondary">
                 {definition.difficulty}
               </span>
-              <button type="button" onClick={() => setShowDetails(true)} className="text-[11px] font-medium text-teal-700 hover:underline">
+              <button type="button" onClick={() => setShowDetails(true)} className="text-[11px] font-medium text-accent hover:underline">
                 View exercise details
               </button>
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">Legacy exercise</span>
-              <span className="text-[11px] text-slate-500">Not in the exercise library — replace it to see instructions.</span>
+              <span className="rounded-full bg-warning-soft px-2 py-0.5 text-[10px] font-medium text-warning">Legacy exercise</span>
+              <span className="text-[11px] text-text-muted">Not in the exercise library — replace it to see instructions.</span>
             </div>
           )}
         </div>
         {nameError && (
-          <p id={`exercise-${index}-name-error`} className="text-xs text-red-600">
+          <p id={`exercise-${index}-name-error`} className="text-xs text-danger">
             {nameError}
           </p>
         )}
       </div>
 
-      <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+      <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
         Sets
         <input
           type="number"
@@ -125,13 +125,13 @@ export default function TemplateExerciseEditor({
           className={`${inputClass} ${setsError ? errorInputClass : ""}`}
         />
         {setsError && (
-          <p id={`exercise-${index}-sets-error`} className="text-xs text-red-600">
+          <p id={`exercise-${index}-sets-error`} className="text-xs text-danger">
             {setsError}
           </p>
         )}
       </label>
 
-      <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+      <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
         Reps
         <input
           type="text"
@@ -144,13 +144,13 @@ export default function TemplateExerciseEditor({
           className={`${inputClass} ${repsError ? errorInputClass : ""}`}
         />
         {repsError && (
-          <p id={`exercise-${index}-reps-error`} className="text-xs text-red-600">
+          <p id={`exercise-${index}-reps-error`} className="text-xs text-danger">
             {repsError}
           </p>
         )}
       </label>
 
-      <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+      <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
         Rest (s)
         <input
           type="number"
@@ -163,7 +163,7 @@ export default function TemplateExerciseEditor({
           className={`${inputClass} ${restError ? errorInputClass : ""}`}
         />
         {restError && (
-          <p id={`exercise-${index}-rest-error`} className="text-xs text-red-600">
+          <p id={`exercise-${index}-rest-error`} className="text-xs text-danger">
             {restError}
           </p>
         )}
@@ -176,7 +176,7 @@ export default function TemplateExerciseEditor({
             onClick={() => onMove("up")}
             disabled={index === 0}
             aria-label={`Move ${exercise.name || "exercise"} up`}
-            className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+            className="rounded-md border border-border px-1.5 py-0.5 text-xs text-text-secondary transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-30"
           >
             ↑
           </button>
@@ -185,7 +185,7 @@ export default function TemplateExerciseEditor({
             onClick={() => onMove("down")}
             disabled={index === count - 1}
             aria-label={`Move ${exercise.name || "exercise"} down`}
-            className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+            className="rounded-md border border-border px-1.5 py-0.5 text-xs text-text-secondary transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-30"
           >
             ↓
           </button>
@@ -195,13 +195,13 @@ export default function TemplateExerciseEditor({
           onClick={onRemove}
           disabled={removeDisabled}
           aria-label={`Remove ${exercise.name || "exercise"}`}
-          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-300 disabled:hover:bg-transparent disabled:hover:text-slate-600"
+          className="rounded-[var(--control-radius)] border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-danger/40 hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-text-secondary"
         >
           Remove
         </button>
       </div>
 
-      <label className="col-span-2 flex flex-col gap-1 text-xs font-medium text-slate-600 sm:col-span-6">
+      <label className="col-span-2 flex flex-col gap-1 text-xs font-medium text-text-secondary sm:col-span-6">
         Notes (optional)
         <input
           type="text"

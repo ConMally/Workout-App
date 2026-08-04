@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { LoggedExercise, LoggedSet, WeightUnit } from "@/types/workout-log";
 import { getCurrentSetIndex } from "@/lib/workout-log";
+import Button from "@/components/ui/Button";
 
 const MAX_WEIGHT = 2000;
 const MAX_REPS = 200;
@@ -70,21 +71,21 @@ export default function ExerciseLogger({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Log your sets</p>
-        <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+        <p className="text-sm font-semibold text-text-secondary">Log your sets</p>
+        <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
           <input
             type="checkbox"
             checked={exercise.completed}
             onChange={(e) => onChange({ ...exercise, completed: e.target.checked })}
-            className="h-5 w-5 rounded border-slate-300 accent-teal-600"
+            className="h-5 w-5 rounded border-border accent-accent"
           />
           {exercise.completed ? "Exercise complete" : "Mark exercise complete"}
         </label>
       </div>
 
-      <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="mt-3 divide-y divide-border">
         {exercise.sets.map((set, index) => {
           const isCurrent = index === currentSetIndex;
           const lastSet = lastPerformance?.sets[index];
@@ -94,22 +95,20 @@ export default function ExerciseLogger({
             <div
               key={set.setNumber}
               className={`flex flex-col gap-2 py-3 first:pt-0 motion-safe:transition-colors motion-safe:duration-300 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 ${
-                isCurrent
-                  ? "-mx-2 rounded-xl border-l-4 border-teal-500 bg-teal-50/60 px-2 py-3 dark:bg-teal-950/20"
-                  : ""
+                isCurrent ? "-mx-2 rounded-[var(--control-radius)] border-l-4 border-accent bg-accent-soft/60 px-2 py-3" : ""
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className="w-14 flex-shrink-0 text-sm font-semibold text-slate-500 dark:text-slate-400">Set {set.setNumber}</span>
+                <span className="w-14 flex-shrink-0 text-sm font-semibold text-text-muted">Set {set.setNumber}</span>
                 {isCurrent && (
-                  <span className="rounded-full bg-teal-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent-foreground">
                     Current
                   </span>
                 )}
                 {set.completed && (
                   <span
                     aria-hidden="true"
-                    className="motion-safe:animate-scale-in flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white"
+                    className="motion-safe:animate-scale-in flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground"
                   >
                     ✓
                   </span>
@@ -117,12 +116,12 @@ export default function ExerciseLogger({
               </div>
 
               {hasLastData && (
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-text-muted">
                   Last time: {lastSet!.weight} {weightUnit} × {lastSet!.reps}
                 </span>
               )}
 
-              <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <label className="flex items-center gap-1.5 text-xs text-text-muted">
                 Weight ({weightUnit})
                 <input
                   type="number"
@@ -130,10 +129,10 @@ export default function ExerciseLogger({
                   min={0}
                   value={set.weight ?? ""}
                   onChange={(e) => updateSet(index, { weight: parseNullableWeight(e.target.value, set.weight) })}
-                  className="w-20 rounded-lg border border-slate-200 px-2 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="w-20 rounded-[var(--control-radius)] border border-border bg-surface px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
                 />
               </label>
-              <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <label className="flex items-center gap-1.5 text-xs text-text-muted">
                 Reps
                 <input
                   type="number"
@@ -141,15 +140,15 @@ export default function ExerciseLogger({
                   min={0}
                   value={set.reps ?? ""}
                   onChange={(e) => updateSet(index, { reps: parseNullableReps(e.target.value, set.reps) })}
-                  className="w-16 rounded-lg border border-slate-200 px-2 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="w-16 rounded-[var(--control-radius)] border border-border bg-surface px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
                 />
               </label>
-              <label className="ml-auto flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+              <label className="ml-auto flex items-center gap-1.5 text-xs font-medium text-text-secondary">
                 <input
                   type="checkbox"
                   checked={set.completed}
                   onChange={(e) => updateSet(index, { completed: e.target.checked })}
-                  className="h-5 w-5 rounded border-slate-300 accent-teal-600"
+                  className="h-5 w-5 rounded border-border accent-accent"
                 />
                 {set.completed ? "Completed" : "Mark complete"}
               </label>
@@ -158,7 +157,7 @@ export default function ExerciseLogger({
         })}
       </div>
 
-      <label className="mt-4 block text-xs font-medium text-slate-500 dark:text-slate-400">
+      <label className="mt-4 block text-xs font-medium text-text-muted">
         Note (optional)
         <textarea
           value={exercise.note}
@@ -166,18 +165,14 @@ export default function ExerciseLogger({
           rows={2}
           maxLength={500}
           placeholder="e.g. felt strong, form broke down on the last rep..."
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+          className="mt-1 w-full rounded-[var(--control-radius)] border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
         />
       </label>
 
       {exercise.completed && hasNext && (
-        <button
-          type="button"
-          onClick={onContinue}
-          className="motion-safe:animate-step-in mt-4 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition active:scale-95 hover:bg-teal-700"
-        >
+        <Button type="button" variant="primary" onClick={onContinue} className="motion-safe:animate-step-in mt-4 w-full">
           Continue to next exercise →
-        </button>
+        </Button>
       )}
     </div>
   );

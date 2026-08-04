@@ -890,14 +890,14 @@ export default function Home() {
       <MigrationBanner />
 
       {saveError && (
-        <div role="alert" className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+        <div role="alert" className="flex items-start justify-between gap-3 rounded-[var(--control-radius)] border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
           <div className="flex flex-col items-start gap-1.5">
             <p>{saveError}</p>
             {isSessionExpiredMessage(saveError) && (
               <button
                 type="button"
                 onClick={() => router.push(`/login?redirectTo=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`)}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+                className="rounded-md bg-danger px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
               >
                 Log in again
               </button>
@@ -905,7 +905,7 @@ export default function Home() {
           </div>
           <button
             onClick={() => setSaveError(null)}
-            className="shrink-0 rounded-md px-1.5 py-0.5 text-red-600 transition hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900/40"
+            className="shrink-0 rounded-md px-1.5 py-0.5 text-danger transition hover:bg-danger-soft"
             aria-label="Dismiss"
           >
             ✕
@@ -914,11 +914,11 @@ export default function Home() {
       )}
 
       {activeTab === "plan" && templateUseSuccess && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+        <div className="flex items-start justify-between gap-3 rounded-[var(--control-radius)] border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-accent">
           <p>{templateUseSuccess}</p>
           <button
             onClick={() => setTemplateUseSuccess(null)}
-            className="shrink-0 rounded-md px-1.5 py-0.5 text-teal-700 transition hover:bg-teal-100"
+            className="shrink-0 rounded-md px-1.5 py-0.5 text-accent transition hover:bg-accent-soft"
             aria-label="Dismiss"
           >
             ✕

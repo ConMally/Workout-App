@@ -11,6 +11,7 @@ import AppHeader from "@/components/layout/AppHeader";
 import MigrationPanel from "@/components/migration/MigrationPanel";
 import SyncStatus from "@/components/account/SyncStatus";
 import { formatDate } from "@/lib/workout-log";
+import Button from "@/components/ui/Button";
 
 export const metadata: Metadata = { title: "Account — LiftWise" };
 
@@ -50,7 +51,7 @@ export default async function AccountPage() {
 
       <Link
         href="/?tab=dashboard"
-        className="flex w-fit items-center gap-1.5 text-sm font-semibold text-teal-700 hover:underline"
+        className="flex w-fit items-center gap-1.5 text-sm font-semibold text-accent hover:underline"
       >
         <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 15l-5-5 5-5" />
@@ -60,16 +61,13 @@ export default async function AccountPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Account</h2>
-          <p className="mt-1 text-sm text-slate-500">{user.email}</p>
+          <h2 className="text-page-title text-text-primary">Account</h2>
+          <p className="mt-1 text-supporting">{user.email}</p>
         </div>
         <form action={logOut}>
-          <button
-            type="submit"
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
+          <Button type="submit" variant="secondary">
             Sign out
-          </button>
+          </Button>
         </form>
       </div>
 
@@ -79,7 +77,7 @@ export default async function AccountPage() {
 
       <ProfileForm profile={profile} />
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-text-muted">
         Account created {formatDate(profile.createdAt)} · Last updated {formatDate(profile.updatedAt)}
       </p>
     </main>

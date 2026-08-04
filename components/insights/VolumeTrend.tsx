@@ -11,9 +11,9 @@ export default function VolumeTrend({ volumeTrend, weightUnit }: VolumeTrendProp
 
   if (!hasEnoughData) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Weekly training volume</h3>
-        <p className="mt-2 text-sm text-slate-400">
+      <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <h3 className="text-label">Weekly training volume</h3>
+        <p className="mt-2 text-sm text-text-muted">
           Log weight and reps for a few sets to start tracking your logged weighted volume here.
         </p>
       </div>
@@ -23,9 +23,9 @@ export default function VolumeTrend({ volumeTrend, weightUnit }: VolumeTrendProp
   const maxVolume = Math.max(...weeklyTotals.map((w) => w.volume), 1);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Weekly training volume</h3>
-      <p className="mt-1 text-xs text-slate-400">
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+      <h3 className="text-label">Weekly training volume</h3>
+      <p className="mt-1 text-xs text-text-muted">
         &ldquo;Logged weighted volume&rdquo; = weight × reps across completed sets with a logged weight. Bodyweight
         and unlogged sets aren&apos;t counted, since no weight value is invented for them.
       </p>
@@ -40,17 +40,17 @@ export default function VolumeTrend({ volumeTrend, weightUnit }: VolumeTrendProp
       <div className="mt-5 flex items-end gap-3" role="img" aria-label="Weekly volume for the last 4 weeks, oldest to newest">
         {weeklyTotals.map((week, i) => (
           <div key={week.weekStart} className="flex flex-1 flex-col items-center gap-1.5">
-            <div className="flex h-24 w-full items-end rounded-lg bg-slate-100">
+            <div className="flex h-24 w-full items-end rounded-[var(--control-radius)] bg-surface-muted">
               <div
-                className="w-full rounded-lg bg-teal-500 motion-safe:transition-all motion-safe:duration-500"
+                className="w-full rounded-[var(--control-radius)] bg-accent motion-safe:transition-all motion-safe:duration-500"
                 style={{ height: `${Math.max(4, (week.volume / maxVolume) * 100)}%` }}
               />
             </div>
-            <span className="text-xs text-slate-400">{i === weeklyTotals.length - 1 ? "This week" : `${weeklyTotals.length - 1 - i}w ago`}</span>
+            <span className="text-xs text-text-muted">{i === weeklyTotals.length - 1 ? "This week" : `${weeklyTotals.length - 1 - i}w ago`}</span>
           </div>
         ))}
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-text-muted">
         {weeklyTotals.map((w) => w.volume.toLocaleString()).join(" → ")} {weightUnit}
       </p>
     </div>
@@ -59,9 +59,9 @@ export default function VolumeTrend({ volumeTrend, weightUnit }: VolumeTrendProp
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2">
-      <p className="text-xs font-medium text-slate-400">{label}</p>
-      <p className="mt-0.5 text-sm font-bold text-slate-900">{value}</p>
+    <div className="rounded-[var(--control-radius)] bg-surface-muted px-3 py-2">
+      <p className="text-xs font-medium text-text-muted">{label}</p>
+      <p className="mt-0.5 text-sm font-bold text-text-primary">{value}</p>
     </div>
   );
 }

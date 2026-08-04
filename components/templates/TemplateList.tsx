@@ -13,6 +13,7 @@ import {
 } from "@/lib/templates";
 import { getFriendlyDataErrorMessage } from "@/lib/supabase/data-errors";
 import EmptyState from "@/components/EmptyState";
+import Button from "@/components/ui/Button";
 import TemplateCard from "./TemplateCard";
 import TemplateToolbar from "./TemplateToolbar";
 import TemplateEditor, { type TemplateEditorSubmitInput } from "./TemplateEditor";
@@ -210,8 +211,8 @@ export default function TemplateList({
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">{view.mode === "edit" ? "Edit template" : "New template"}</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-page-title text-text-primary">{view.mode === "edit" ? "Edit template" : "New template"}</h2>
+          <p className="mt-1 text-supporting">
             {view.mode === "edit" ? "Update the name, days, and exercises." : "Build a reusable weekly workout blueprint."}
           </p>
         </div>
@@ -235,16 +236,12 @@ export default function TemplateList({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Templates</h2>
-          <p className="mt-1 text-sm text-slate-500">Reusable workout blueprints you can start from anytime.</p>
+          <h2 className="text-page-title text-text-primary">Templates</h2>
+          <p className="mt-1 text-supporting">Reusable workout blueprints you can start from anytime.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setView({ mode: "create" })}
-          className="rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-        >
+        <Button type="button" variant="primary" onClick={() => setView({ mode: "create" })}>
           Create template
-        </button>
+        </Button>
       </div>
 
       {templates.length > 0 && (
@@ -258,7 +255,7 @@ export default function TemplateList({
         />
       )}
 
-      {listError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{listError}</p>}
+      {listError && <p className="rounded-[var(--control-radius)] bg-danger-soft px-3 py-2 text-sm text-danger">{listError}</p>}
 
       {templates.length === 0 ? (
         <EmptyState

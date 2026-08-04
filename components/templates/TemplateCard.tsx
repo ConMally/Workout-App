@@ -3,6 +3,7 @@
 import type { TemplateSummary } from "@/types/templates";
 import { GOAL_LABELS } from "@/lib/workout-generator";
 import { formatDate } from "@/lib/workout-log";
+import Button from "@/components/ui/Button";
 
 interface TemplateCardProps {
   template: TemplateSummary;
@@ -28,11 +29,11 @@ export default function TemplateCard({
     : `Favorite ${template.name}`;
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{GOAL_LABELS[template.goal]}</p>
-          <h3 className="mt-0.5 truncate text-base font-bold text-slate-900">{template.name}</h3>
+          <p className="text-label">{GOAL_LABELS[template.goal]}</p>
+          <h3 className="mt-0.5 truncate text-card-title text-text-primary">{template.name}</h3>
         </div>
         <button
           type="button"
@@ -41,17 +42,17 @@ export default function TemplateCard({
           title={favoriteLabel}
           aria-label={favoriteLabel}
           aria-pressed={template.isFavorite}
-          className={`flex-shrink-0 rounded-lg p-1.5 text-lg leading-none transition hover:bg-amber-50 hover:text-amber-500 disabled:cursor-not-allowed disabled:opacity-50 ${
-            template.isFavorite ? "text-amber-500" : "text-slate-300"
+          className={`flex-shrink-0 rounded-[var(--control-radius)] p-1.5 text-lg leading-none transition hover:bg-warning-soft hover:text-warning disabled:cursor-not-allowed disabled:opacity-50 ${
+            template.isFavorite ? "text-warning" : "text-text-muted"
           }`}
         >
           {template.isFavorite ? "★" : "☆"}
         </button>
       </div>
 
-      {template.description && <p className="line-clamp-2 text-sm text-slate-500">{template.description}</p>}
+      {template.description && <p className="line-clamp-2 text-sm text-text-muted">{template.description}</p>}
 
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-muted">
         <span>
           {template.dayCount} day{template.dayCount === 1 ? "" : "s"}
         </span>
@@ -59,35 +60,20 @@ export default function TemplateCard({
       </div>
 
       <div className="mt-1 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-        <button
-          type="button"
-          onClick={onUse}
-          disabled={busy}
-          className="col-span-2 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
-        >
+        <Button type="button" variant="primary" size="sm" onClick={onUse} disabled={busy} className="col-span-2 sm:col-span-1">
           Use template
-        </button>
-        <button
-          type="button"
-          onClick={onEdit}
-          disabled={busy}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={onEdit} disabled={busy}>
           Edit
-        </button>
-        <button
-          type="button"
-          onClick={onDuplicate}
-          disabled={busy}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={onDuplicate} disabled={busy}>
           Duplicate
-        </button>
+        </Button>
         <button
           type="button"
           onClick={onDelete}
           disabled={busy}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-[var(--control-radius)] border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:border-danger/40 hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
         >
           Delete
         </button>

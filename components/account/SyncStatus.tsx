@@ -58,7 +58,7 @@ export default function SyncStatus() {
 
   if (state.phase === "loading") {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+      <div className="rounded-[var(--control-radius)] border border-border bg-surface-muted px-4 py-3 text-sm text-text-muted">
         Checking sync status…
       </div>
     );
@@ -66,7 +66,7 @@ export default function SyncStatus() {
 
   if (state.phase === "error") {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--control-radius)] border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
         <p>Couldn&apos;t confirm sync status — {state.message}</p>
         <button type="button" onClick={() => setNonce((n) => n + 1)} className="font-semibold underline">
           Retry
@@ -78,23 +78,23 @@ export default function SyncStatus() {
   const migrationLabel = state.migrationStatus ? MIGRATION_STATUS_LABELS[state.migrationStatus.status] : "Unknown";
 
   return (
-    <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+    <div className="rounded-[var(--control-radius)] border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-accent">
       <p className="flex items-center gap-2 font-medium">
-        <span className="h-2 w-2 flex-shrink-0 rounded-full bg-teal-500" aria-hidden="true" />
+        <span className="h-2 w-2 flex-shrink-0 rounded-full bg-accent" aria-hidden="true" />
         Cloud sync active
       </p>
       <p className="mt-1">Your workout plans, history, goals, and progress are synced to this account.</p>
-      <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 text-xs text-teal-700 sm:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 text-xs text-accent sm:grid-cols-3">
         <div>
-          <dt className="font-semibold uppercase tracking-wide text-teal-600">Data source</dt>
+          <dt className="font-semibold uppercase tracking-wide text-accent">Data source</dt>
           <dd className="mt-0.5">This account (cloud)</dd>
         </div>
         <div>
-          <dt className="font-semibold uppercase tracking-wide text-teal-600">Last synced</dt>
+          <dt className="font-semibold uppercase tracking-wide text-accent">Last synced</dt>
           <dd className="mt-0.5">Just now</dd>
         </div>
         <div>
-          <dt className="font-semibold uppercase tracking-wide text-teal-600">Device data migration</dt>
+          <dt className="font-semibold uppercase tracking-wide text-accent">Device data migration</dt>
           <dd className="mt-0.5">{migrationLabel}</dd>
         </div>
       </dl>

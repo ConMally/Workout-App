@@ -18,13 +18,13 @@ export default function PRCelebration({ events, onDismiss }: PRCelebrationProps)
   if (events.length === 0) return null;
 
   return (
-    <div role="status" className="motion-safe:animate-step-in rounded-2xl border border-teal-200 bg-teal-50 p-5">
+    <div role="status" className="motion-safe:animate-step-in rounded-[var(--card-radius)] border border-accent/30 bg-accent-soft p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-teal-900">
+          <h3 className="text-sm font-semibold text-accent">
             New personal record{events.length > 1 ? "s" : ""}
           </h3>
-          <ul className="mt-2 space-y-1.5 text-sm text-teal-800">
+          <ul className="mt-2 space-y-1.5 text-sm text-accent">
             {events.map((event, i) => (
               <li key={i}>
                 <span className="font-semibold">{event.exerciseName}</span> — {TYPE_LABEL[event.type]}:{" "}
@@ -37,7 +37,7 @@ export default function PRCelebration({ events, onDismiss }: PRCelebrationProps)
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="flex-shrink-0 rounded-full p-1 text-teal-600 hover:bg-teal-100"
+          className="flex-shrink-0 rounded-full p-1 text-accent hover:bg-accent-soft"
         >
           <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
             <path d="M5 5l10 10M15 5L5 15" />

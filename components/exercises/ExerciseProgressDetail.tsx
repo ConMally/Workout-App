@@ -4,6 +4,7 @@ import { getExerciseStats } from "@/lib/insights";
 import { getProgressionSuggestion } from "@/lib/progression";
 import { findLastPerformance, formatDate } from "@/lib/workout-log";
 import MiniLineChart from "@/components/insights/MiniLineChart";
+import Card from "@/components/ui/Card";
 
 const TYPE_LABEL: Record<string, string> = {
   heaviest_weight: "Heaviest weight",
@@ -36,7 +37,7 @@ export default function ExerciseProgressDetail({ exerciseName, history, weightUn
       <button
         type="button"
         onClick={onBack}
-        className="flex w-fit items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-teal-700"
+        className="flex w-fit items-center gap-1.5 text-sm font-medium text-text-secondary hover:text-accent"
       >
         <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 15l-5-5 5-5" />
@@ -45,18 +46,18 @@ export default function ExerciseProgressDetail({ exerciseName, history, weightUn
       </button>
 
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">{exerciseName}</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="text-page-title text-text-primary">{exerciseName}</h2>
+        <p className="mt-1 text-supporting">
           {stats.workoutCount} workout{stats.workoutCount === 1 ? "" : "s"} logged · {stats.totalCompletedSets} completed set
           {stats.totalCompletedSets === 1 ? "" : "s"}
         </p>
       </div>
 
       {stats.workoutCount === 0 ? (
-        <p className="text-sm text-slate-400">No logged history for this exercise yet.</p>
+        <p className="text-sm text-text-muted">No logged history for this exercise yet.</p>
       ) : (
         <>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <Card>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Stat label="First performance" value={stats.firstPerformance ? formatDate(stats.firstPerformance.completedAt) : "—"} />
               <Stat label="Most recent" value={stats.latestPerformance ? formatDate(stats.latestPerformance.completedAt) : "—"} />
@@ -67,14 +68,14 @@ export default function ExerciseProgressDetail({ exerciseName, history, weightUn
             </div>
 
             <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estimated 1RM over time</p>
+              <p className="text-label">Estimated 1RM over time</p>
               <div className="mt-2">
                 <MiniLineChart points={chartPoints} ariaLabel={`Estimated one-rep max for ${exerciseName} over time`} />
               </div>
             </div>
 
             <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Weight progress</p>
+              <p className="text-label">Weight progress</p>
               <div className="mt-2">
                 <MiniLineChart
                   points={weightChartPoints}
@@ -83,30 +84,30 @@ export default function ExerciseProgressDetail({ exerciseName, history, weightUn
                 />
               </div>
             </div>
-          </div>
+          </Card>
 
           {suggestion && (
-            <div className="rounded-2xl border border-teal-200 bg-teal-50 p-5 sm:p-6">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-teal-800">Progression recommendation</h3>
-              <p className="mt-2 text-sm text-teal-900">{suggestion.message}</p>
+            <div className="rounded-[var(--card-radius)] border border-accent/30 bg-accent-soft p-5 sm:p-6">
+              <h3 className="text-label !text-accent">Progression recommendation</h3>
+              <p className="mt-2 text-sm text-accent">{suggestion.message}</p>
             </div>
           )}
 
           {stats.prHistory.length > 0 && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">PR history</h3>
+            <Card>
+              <h3 className="text-label">PR history</h3>
               <ul className="mt-3 flex flex-col gap-2">
                 {stats.prHistory.map((pr, i) => (
                   <li key={i} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-slate-600">{TYPE_LABEL[pr.type] ?? pr.type}</span>
-                    <span className="text-right font-semibold text-slate-900">
+                    <span className="text-text-secondary">{TYPE_LABEL[pr.type] ?? pr.type}</span>
+                    <span className="text-right font-semibold text-text-primary">
                       {pr.detail}
-                      <span className="ml-2 font-normal text-slate-400">{formatDate(pr.completedAt)}</span>
+                      <span className="ml-2 font-normal text-text-muted">{formatDate(pr.completedAt)}</span>
                     </span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           )}
         </>
       )}
@@ -116,9 +117,9 @@ export default function ExerciseProgressDetail({ exerciseName, history, weightUn
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2">
-      <p className="text-xs font-medium text-slate-400">{label}</p>
-      <p className="mt-0.5 text-sm font-bold text-slate-900">{value}</p>
+    <div className="rounded-[var(--control-radius)] bg-surface-muted px-3 py-2">
+      <p className="text-xs font-medium text-text-muted">{label}</p>
+      <p className="mt-0.5 text-sm font-bold text-text-primary">{value}</p>
     </div>
   );
 }

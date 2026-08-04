@@ -7,31 +7,31 @@ interface NextTargetsCardProps {
 }
 
 const DIRECTION_META: Record<OverloadTarget["direction"], { label: string; icon: string; className: string }> = {
-  increase: { label: "Increase", icon: "↑", className: "text-teal-700" },
-  hold: { label: "Hold", icon: "→", className: "text-slate-500" },
-  decrease: { label: "Decrease", icon: "↓", className: "text-amber-700" },
+  increase: { label: "Increase", icon: "↑", className: "text-accent" },
+  hold: { label: "Hold", icon: "→", className: "text-text-muted" },
+  decrease: { label: "Decrease", icon: "↓", className: "text-warning" },
 };
 
 export default function NextTargetsCard({ targets, weightUnit }: NextTargetsCardProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Next progression targets</h3>
+    <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+      <h3 className="text-label">Next progression targets</h3>
       {targets.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-400">Log a weight on an exercise to get concrete next-session targets.</p>
+        <p className="mt-2 text-sm text-text-muted">Log a weight on an exercise to get concrete next-session targets.</p>
       ) : (
-        <ul className="mt-3 flex flex-col divide-y divide-slate-100">
+        <ul className="mt-3 flex flex-col divide-y divide-border">
           {targets.map((target) => {
             const meta = DIRECTION_META[target.direction];
             return (
               <li key={target.exerciseName} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-800">{target.exerciseName}</p>
-                  <p className="text-xs text-slate-500">{target.reasoning}</p>
+                  <p className="truncate text-sm font-medium text-text-primary">{target.exerciseName}</p>
+                  <p className="text-xs text-text-muted">{target.reasoning}</p>
                 </div>
                 <div className={`flex-shrink-0 text-right text-sm font-semibold ${meta.className}`}>
                   <span aria-hidden="true">{meta.icon}</span> {meta.label}
                   {target.nextWeight !== null && (
-                    <p className="text-xs font-normal text-slate-500">
+                    <p className="text-xs font-normal text-text-muted">
                       {target.nextWeight} {weightUnit} × {target.nextReps} × {target.nextSets}
                     </p>
                   )}

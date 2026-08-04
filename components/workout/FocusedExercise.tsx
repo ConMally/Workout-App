@@ -63,11 +63,11 @@ export default function FocusedExercise({
 
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-xs font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400">
+      <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <p className="text-eyebrow">
           Exercise {exerciseIndex + 1} of {totalExercises}
         </p>
-        <h2 ref={headingRef} tabIndex={-1} className="mt-0.5 text-2xl font-bold text-slate-900 focus:outline-none dark:text-slate-100">
+        <h2 ref={headingRef} tabIndex={-1} className="mt-0.5 text-page-title text-text-primary focus:outline-none">
           {exercise.name}
         </h2>
 
@@ -81,18 +81,18 @@ export default function FocusedExercise({
         <button
           type="button"
           onClick={() => onSelectExercise(exercise.name)}
-          className="mt-3 text-xs font-medium text-teal-700 hover:underline dark:text-teal-400"
+          className="mt-3 text-xs font-medium text-accent hover:underline"
         >
           View full progress →
         </button>
 
         {suggestion && (
-          <p className="mt-2 rounded-lg bg-teal-50 px-3 py-2 text-xs font-medium text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
+          <p className="mt-2 rounded-[var(--control-radius)] bg-accent-soft px-3 py-2 text-xs font-medium text-accent">
             {suggestion.message}
           </p>
         )}
 
-        <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+        <div className="mt-4 border-t border-border pt-4">
           {definition ? (
             <>
               <button
@@ -100,7 +100,7 @@ export default function FocusedExercise({
                 onClick={() => setGuideExpanded((v) => !v)}
                 aria-expanded={guideExpanded}
                 aria-controls={guideId}
-                className="flex w-full items-center justify-between gap-2 rounded-lg text-left text-sm font-semibold text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 dark:text-slate-200"
+                className="flex w-full items-center justify-between gap-2 rounded-[var(--control-radius)] text-left text-sm font-semibold text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <span>View exercise guide</span>
                 <span aria-hidden="true" className={`motion-safe:transition-transform ${guideExpanded ? "rotate-180" : ""}`}>
@@ -117,7 +117,7 @@ export default function FocusedExercise({
                   </div>
 
                   <GuideSection title="Muscles worked">
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
+                    <p className="text-sm text-text-secondary">
                       {MUSCLE_GROUP_LABELS[definition.primaryMuscle]}
                       {definition.secondaryMuscles.length > 0 &&
                         ` — also ${definition.secondaryMuscles.map((m) => MUSCLE_GROUP_LABELS[m]).join(", ")}`}
@@ -126,7 +126,7 @@ export default function FocusedExercise({
 
                   {definition.setupInstructions && definition.setupInstructions.length > 0 && (
                     <GuideSection title="Setup">
-                      <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+                      <ol className="list-decimal space-y-1 pl-5 text-sm text-text-secondary">
                         {definition.setupInstructions.map((step, i) => (
                           <li key={i}>{step}</li>
                         ))}
@@ -135,7 +135,7 @@ export default function FocusedExercise({
                   )}
 
                   <GuideSection title="Execution">
-                    <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+                    <ol className="list-decimal space-y-1 pl-5 text-sm text-text-secondary">
                       {definition.instructions.map((step, i) => (
                         <li key={i}>{step}</li>
                       ))}
@@ -144,12 +144,12 @@ export default function FocusedExercise({
 
                   {definition.breathingGuidance && (
                     <GuideSection title="Breathing">
-                      <p className="text-sm text-slate-700 dark:text-slate-300">{definition.breathingGuidance}</p>
+                      <p className="text-sm text-text-secondary">{definition.breathingGuidance}</p>
                     </GuideSection>
                   )}
 
                   <GuideSection title="Coaching cues">
-                    <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+                    <ul className="list-disc space-y-1 pl-5 text-sm text-text-secondary">
                       {definition.coachingCues.map((cue, i) => (
                         <li key={i}>{cue}</li>
                       ))}
@@ -157,7 +157,7 @@ export default function FocusedExercise({
                   </GuideSection>
 
                   <GuideSection title="Common mistakes">
-                    <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+                    <ul className="list-disc space-y-1 pl-5 text-sm text-text-secondary">
                       {definition.commonMistakes.map((mistake, i) => (
                         <li key={i}>{mistake}</li>
                       ))}
@@ -166,7 +166,7 @@ export default function FocusedExercise({
 
                   {definition.safetyNotes && definition.safetyNotes.length > 0 && (
                     <GuideSection title="Safety notes">
-                      <ul className="list-disc space-y-1 pl-5 text-sm text-amber-800 dark:text-amber-400">
+                      <ul className="list-disc space-y-1 pl-5 text-sm text-warning">
                         {definition.safetyNotes.map((note, i) => (
                           <li key={i}>{note}</li>
                         ))}
@@ -177,7 +177,7 @@ export default function FocusedExercise({
               )}
             </>
           ) : (
-            <p className="text-sm text-slate-400 dark:text-slate-500">Exercise instructions are not available for this exercise.</p>
+            <p className="text-sm text-text-muted">Exercise instructions are not available for this exercise.</p>
           )}
         </div>
       </div>
@@ -198,9 +198,9 @@ export default function FocusedExercise({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800">
-      <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{label}</p>
-      <p className="mt-0.5 text-sm font-bold capitalize text-slate-900 dark:text-slate-100">{value}</p>
+    <div className="rounded-[var(--control-radius)] bg-surface-muted px-3 py-2">
+      <p className="text-xs font-medium text-text-muted">{label}</p>
+      <p className="mt-0.5 text-sm font-bold capitalize text-text-primary">{value}</p>
     </div>
   );
 }
@@ -208,7 +208,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 function GuideSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</h3>
+      <h3 className="text-label">{title}</h3>
       <div className="mt-1.5">{children}</div>
     </div>
   );

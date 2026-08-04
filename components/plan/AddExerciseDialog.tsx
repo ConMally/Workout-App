@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Equipment, ExerciseDefinition } from "@/types/exercises";
 import { MUSCLE_GROUP_LABELS } from "@/types/exercises";
 import { listAllExercises } from "@/lib/exercises/library";
 import { searchExercises } from "@/lib/exercises/search";
-import { useFocusTrap } from "@/lib/useFocusTrap";
+import Dialog from "@/components/ui/Dialog";
+import Button from "@/components/ui/Button";
 
 interface AddExerciseDialogProps {
   availableEquipment?: Equipment[];
@@ -18,8 +19,6 @@ interface AddExerciseDialogProps {
 // ExerciseLibraryBrowser, just with a simpler single-query UI since a full
 // filter panel would be overkill inside an already-open plan editor.
 export default function AddExerciseDialog({ availableEquipment, onSelect, onCancel }: AddExerciseDialogProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(dialogRef, true);
   const [query, setQuery] = useState("");
 
   const allExercises = useMemo(() => listAllExercises(), []);
@@ -32,65 +31,52 @@ export default function AddExerciseDialog({ availableEquipment, onSelect, onCanc
       .slice(0, 20);
   }, [query, allExercises, availableEquipment]);
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") onCancel();
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4" role="presentation" onClick={onCancel} onKeyDown={handleKeyDown}>
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-exercise-title"
-        onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg"
-      >
-        <div className="border-b border-slate-100 p-5 sm:p-6">
-          <h3 id="add-exercise-title" className="text-lg font-semibold text-slate-900">
-            Add exercise
-          </h3>
-          <label htmlFor="add-exercise-search" className="sr-only">
-            Search exercises
-          </label>
-          <input
-            id="add-exercise-search"
-            type="search"
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name or muscle…"
-            className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-          />
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4">
-          {results.length === 0 ? (
-            <p className="p-2 text-sm text-slate-400">No exercises match.</p>
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {results.map((exercise) => (
-                <li key={exercise.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(exercise)}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg p-2.5 text-left transition hover:bg-teal-50"
-                  >
-                    <span className="truncate text-sm font-medium text-slate-800">{exercise.name}</span>
-                    <span className="flex-shrink-0 text-xs text-slate-400">{MUSCLE_GROUP_LABELS[exercise.primaryMuscle]}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="flex justify-end border-t border-slate-100 p-4">
-          <button type="button" onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-            Cancel
-          </button>
-        </div>
+    <Dialog onClose={onCancel} titleId="add-exercise-title" className="max-h-[85vh] max-w-md">
+      <div className="border-b border-border p-5 sm:p-6">
+        <h3 id="add-exercise-title" className="text-section-heading text-text-primary">
+          Add exercise
+        </h3>
+        <label htmlFor="add-exercise-search" className="sr-only">
+          Search exercises
+        </label>
+        <input
+          id="add-exercise-search"
+          type="search"
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name or muscle…"
+          className="mt-3 h-[var(--control-height)] w-full rounded-[var(--control-radius)] border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
+        />
       </div>
-    </div>
+
+      <div className="flex-1 overflow-y-auto p-4">
+        {results.length === 0 ? (
+          <p className="p-2 text-sm text-text-muted">No exercises match.</p>
+        ) : (
+          <ul className="flex flex-col gap-1">
+            {results.map((exercise) => (
+              <li key={exercise.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(exercise)}
+                  className="flex w-full items-center justify-between gap-3 rounded-[var(--control-radius)] p-2.5 text-left transition hover:bg-accent-soft"
+                >
+                  <span className="truncate text-sm font-medium text-text-primary">{exercise.name}</span>
+                  <span className="flex-shrink-0 text-xs text-text-muted">{MUSCLE_GROUP_LABELS[exercise.primaryMuscle]}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex justify-end border-t border-border p-4">
+        <Button type="button" variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </Dialog>
   );
 }
