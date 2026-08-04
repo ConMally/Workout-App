@@ -250,14 +250,6 @@ export default function ActiveWorkout({
             Next →
           </button>
         </div>
-
-        <RestTimer
-          autoStartTrigger={restTrigger}
-          autoStartEnabled={settings.autoStartRestTimer}
-          onToggleAutoStart={onToggleAutoStart}
-          defaultSeconds={settings.defaultRestSeconds}
-          soundEnabled={settings.timerSound}
-        />
       </div>
 
       <div aria-live="polite" className="sr-only">
@@ -312,6 +304,17 @@ export default function ActiveWorkout({
           onClose={() => setOverviewOpen(false)}
         />
       )}
+
+      {/* Phase 10D: floating, collapsible pill instead of a persistent
+          in-flow card — fixed positioning means it can never shift the
+          exercise-logging layout above, regardless of where it's mounted. */}
+      <RestTimer
+        autoStartTrigger={restTrigger}
+        autoStartEnabled={settings.autoStartRestTimer}
+        onToggleAutoStart={onToggleAutoStart}
+        defaultSeconds={settings.defaultRestSeconds}
+        soundEnabled={settings.timerSound}
+      />
     </div>
   );
 }
