@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppNavigation, { type Tab } from "@/components/navigation/AppNavigation";
+import MobileNav from "@/components/navigation/MobileNav";
 import AuthStatus from "@/components/auth/AuthStatus";
 import BrandMark from "@/components/brand/BrandMark";
 import { useRepositories } from "@/lib/repositories/useRepositories";
@@ -67,7 +68,13 @@ export default function AppHeader({ activeTab, onTabChange, hasActiveWorkout: ha
         <p className="max-w-sm text-sm text-text-secondary sm:text-base">Train smarter. Progress with purpose.</p>
       </header>
 
-      <AppNavigation activeTab={activeTab} onTabChange={onTabChange} hasActiveWorkout={hasActiveWorkout} variant={variant} />
+      {/* Desktop: the full labeled nav row. Mobile: MobileNav's fixed bottom
+          bar takes over navigation entirely (PART 9) — see its own
+          sm:hidden / this wrapper's hidden sm:block split. */}
+      <div className="hidden sm:block">
+        <AppNavigation activeTab={activeTab} onTabChange={onTabChange} hasActiveWorkout={hasActiveWorkout} variant={variant} />
+      </div>
+      <MobileNav activeTab={activeTab} onTabChange={onTabChange} hasActiveWorkout={hasActiveWorkout} variant={variant} />
     </>
   );
 }

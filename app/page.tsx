@@ -89,6 +89,7 @@ interface ProfileExtras {
   onboardingCompleted: boolean;
   feedbackPromptDismissedAt: string | null;
   accountCreatedAt: string | null;
+  displayName: string | null;
 }
 
 async function fetchProfileExtras(userId: string): Promise<ProfileExtras> {
@@ -98,6 +99,10 @@ async function fetchProfileExtras(userId: string): Promise<ProfileExtras> {
     onboardingCompleted: profile?.onboardingCompleted ?? true, // fail safe: never show onboarding on a load error
     feedbackPromptDismissedAt: profile?.feedbackPromptDismissedAt ?? null,
     accountCreatedAt: profile?.createdAt ?? null,
+    // Never the email — the Dashboard greeting (PART 1 of the redesign)
+    // falls back to neutral copy when this is null rather than showing an
+    // email address.
+    displayName: profile?.displayName ?? null,
   };
 }
 
@@ -145,6 +150,7 @@ export default function Home() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [feedbackPromptDismissedAt, setFeedbackPromptDismissedAt] = useState<string | null>(null);
   const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [visitedExercisesTab, setVisitedExercisesTab] = useState(false);
   // Captured once at mount (not recomputed on every render) purely to
   // evaluate the rating prompt's "7 days of use" trigger below.
@@ -235,6 +241,7 @@ export default function Home() {
         setGoals(loadedGoals);
         setSubstitutionHistory(loadedSubstitutions);
         setWeeklyTarget(profileExtras.weeklyTarget);
+        setDisplayName(profileExtras.displayName);
         setTemplates(loadedTemplates);
         setFavoriteExerciseIds(new Set(loadedFavorites.map((f) => f.exerciseId)));
         setSelectedHistoryId(null);
@@ -774,7 +781,7 @@ export default function Home() {
 
   if (reposState.status === "loading" || reposState.status === "unauthenticated" || isLoadingData) {
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
+      <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 pt-8 pb-24 sm:gap-8 sm:px-6 sm:pt-12 sm:pb-12">
         <div role="status" aria-label="Loading" className="flex flex-col gap-3">
           <SkeletonBlock className="mx-auto h-8 w-72" />
           <SkeletonBlock className="h-11 w-full rounded-xl" />
@@ -787,7 +794,7 @@ export default function Home() {
   if (loadError) {
     const sessionExpired = isSessionExpiredMessage(loadError);
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
+      <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 pt-8 pb-24 sm:gap-8 sm:px-6 sm:pt-12 sm:pb-12">
         <ErrorState
           title="Couldn't load your data"
           message={loadError}
@@ -872,7 +879,7 @@ export default function Home() {
   return (
     <main
       className={`mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col px-4 sm:px-6 ${
-        settings.compactMode ? "gap-4 py-5 sm:gap-5 sm:py-7" : "gap-6 py-8 sm:gap-8 sm:py-12"
+        settings.compactMode ? "gap-4 pt-5 pb-20 sm:gap-5 sm:pt-7 sm:pb-7" : "gap-6 pt-8 pb-24 sm:gap-8 sm:pt-12 sm:pb-12"
       }`}
     >
       <ThemeEffect settings={settings} />
@@ -958,12 +965,12 @@ export default function Home() {
               substitutionHistory={substitutionHistory}
               weightUnit={settings.weightUnit}
               weeklyTarget={weeklyTarget}
+              displayName={displayName}
               onStartWorkout={handleStartWorkout}
               onResumeWorkout={() => setActiveTab("workout")}
               onGoToPlan={() => setActiveTab("plan")}
-              onGoToHistory={() => setActiveTab("history")}
               onGoToInsights={() => setActiveTab("insights")}
-              onGoToSettings={() => setActiveTab("settings")}
+              onGoToTemplates={() => setActiveTab("templates")}
               onViewHistoryEntry={(id) => {
                 setSelectedHistoryId(id);
                 setActiveTab("history");

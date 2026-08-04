@@ -2,20 +2,28 @@ interface StatsCardProps {
   icon: string;
   label: string;
   value: string;
+  // Short contextual note under the value — e.g. a recovery reason or a
+  // trend ("+12% vs last week"). Never a second independent calculation:
+  // every caller passes something already computed elsewhere.
+  context?: string;
 }
 
-export default function StatsCard({ icon, label, value }: StatsCardProps) {
+// PART 4: compact metric tile — icon + large value + short label, used by
+// KeyMetrics. Kept as its own component (not inlined) since the same shape
+// is reused for streak/workouts/PRs/recovery.
+export default function StatsCard({ icon, label, value, context }: StatsCardProps) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex items-center gap-3 rounded-[var(--card-radius)] border border-border bg-surface p-4 shadow-sm">
       <span
-        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-teal-50 text-lg dark:bg-teal-950/50"
+        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg"
         aria-hidden="true"
       >
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-xs font-medium uppercase leading-tight tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
-        <p className="mt-0.5 text-xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
+        <p className="text-label">{label}</p>
+        <p className="mt-0.5 text-metric text-text-primary">{value}</p>
+        {context && <p className="mt-0.5 truncate text-xs text-text-muted">{context}</p>}
       </div>
     </div>
   );

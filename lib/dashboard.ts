@@ -150,6 +150,21 @@ export function getWeeklyProgress(history: CompletedWorkout[]): WeeklyProgress {
 }
 
 // ---------------------------------------------------------------------------
+// Greeting — local time-of-day only (never a network call, never guesses a
+// user's timezone beyond what their own device already reports via
+// Date#getHours). Deliberately three broad bands rather than a precise
+// sunrise/sunset calculation, which would need location data this app
+// doesn't collect.
+// ---------------------------------------------------------------------------
+
+export function getTimeOfDayGreeting(now: Date = new Date()): string {
+  const hour = now.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+// ---------------------------------------------------------------------------
 // Today's workout — resume the active one, otherwise suggest the day after
 // whichever was most recently completed (cycling through the plan).
 // ---------------------------------------------------------------------------

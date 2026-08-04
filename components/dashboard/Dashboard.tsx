@@ -6,30 +6,21 @@ import type { WorkoutPlan } from "@/types/workout";
 import type { ActiveWorkout, CompletedWorkout, WeightUnit } from "@/types/workout-log";
 import type { Goal } from "@/types/goals";
 import type { SubstitutionHistory } from "@/lib/storage";
-import {
-  getNextRecommendation,
-  getQuickStats,
-  getRecentPRs,
-  getTodayWorkout,
-  getWeeklyProgress,
-} from "@/lib/dashboard";
+import { getQuickStats, getRecentPRs, getTodayWorkout, getWeeklyProgress } from "@/lib/dashboard";
 import { computeCoachAnalytics } from "@/lib/analytics";
-import StatsCard from "./StatsCard";
+import DashboardHeader from "./DashboardHeader";
 import TodayWorkout from "./TodayWorkout";
+import KeyMetrics from "./KeyMetrics";
 import WeeklyProgress from "./WeeklyProgress";
-import RecentActivity from "./RecentActivity";
-import RecentPRs from "./RecentPRs";
+import CoachInsight from "./CoachInsight";
 import GoalsSummary from "./GoalsSummary";
-import QuickActions from "./QuickActions";
-import DashboardSpotlight from "./DashboardSpotlight";
+import RecentActivity from "./RecentActivity";
 import CoachSkeleton from "@/components/skeletons/CoachSkeleton";
 
-// PART 9: the Coach section (recommendations, charts, consistency
-// calendar) is the heaviest part of the dashboard and isn't needed until
-// the user scrolls to it — split into its own chunk instead of the initial
-// dashboard bundle. Its charts (GoalProgressChart/ConsistencyCalendar) ride
-// along in the same chunk automatically, so they don't need a second,
-// separate dynamic() boundary of their own.
+// PART 9 (Phase 10B): the Coach section (recommendations, charts,
+// consistency calendar) is the heaviest part of the dashboard and isn't
+// needed until the user scrolls to it — split into its own chunk instead of
+// the initial dashboard bundle.
 const CoachSection = dynamic(() => import("@/components/coach/CoachSection"), { loading: () => <CoachSkeleton /> });
 
 interface DashboardProps {
@@ -42,27 +33,24 @@ interface DashboardProps {
   // null for signed-out (local) mode and for cloud users who haven't set
   // one — weeklyTrainingTarget lives on profiles, an account-only concept.
   weeklyTarget: number | null;
+  // Never the user's email — see components/dashboard/DashboardHeader.tsx.
+  displayName: string | null;
   onStartWorkout: (dayIndex: number) => void;
   onResumeWorkout: () => void;
   onGoToPlan: () => void;
-  onGoToHistory: () => void;
   onGoToInsights: () => void;
-  onGoToSettings: () => void;
+  onGoToTemplates: () => void;
   onViewHistoryEntry: (id: string) => void;
   onSelectExercise: (name: string) => void;
 }
 
-const READINESS_FIELD_LABELS: { key: "energy" | "soreness"; label: string }[] = [
-  { key: "energy", label: "energy" },
-  { key: "soreness", label: "soreness" },
-];
-
-const TODAY_FORMAT: Intl.DateTimeFormatOptions = {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-};
-
+// Phase 10B: rebuilt around one clear hierarchy (PART 8) — greeting, one
+// dominant hero action, a compact weekly-progress/key-metrics glance, one
+// focused coach insight, goals, recent activity, then the full Coach detail
+// lower on the page. Every card below reads from the same three
+// computations (getQuickStats/getWeeklyProgress/computeCoachAnalytics),
+// each still called exactly once per render — nothing here recalculates
+// what a child component could instead receive as a prop.
 export default function Dashboard({
   plan,
   activeWorkout,
@@ -71,12 +59,12 @@ export default function Dashboard({
   substitutionHistory,
   weightUnit,
   weeklyTarget,
+  displayName,
   onStartWorkout,
   onResumeWorkout,
   onGoToPlan,
-  onGoToHistory,
   onGoToInsights,
-  onGoToSettings,
+  onGoToTemplates,
   onViewHistoryEntry,
   onSelectExercise,
 }: DashboardProps) {
@@ -85,74 +73,63 @@ export default function Dashboard({
   const recentPRs = useMemo(() => getRecentPRs(history, 3), [history]);
   const recentActivity = useMemo(() => history.slice(0, 5), [history]);
   const todayInfo = useMemo(() => getTodayWorkout(plan, activeWorkout, history), [plan, activeWorkout, history]);
-  const recommendation = useMemo(() => getNextRecommendation(history, plan), [history, plan]);
 
-  // The single place that calls computeCoachAnalytics (Phase 7) — both
-  // DashboardSpotlight (the top-of-page glance strip) and CoachSection (the
-  // full detail further down) receive this same object as a prop rather
-  // than each computing their own copy. Every sub-calculation already
-  // degrades gracefully for a brand-new account with no history (see their
-  // own hasEnoughData-style flags), so this is safe to compute unconditionally.
+  // The single place that calls computeCoachAnalytics (Phase 7) — every
+  // dashboard card below that needs coach/analytics data (KeyMetrics'
+  // recovery tile, WeeklyProgress' volume trend, CoachInsight, CoachSection)
+  // receives this same object as a prop rather than each computing its own
+  // copy. Every sub-calculation already degrades gracefully for a brand-new
+  // account with no history (see their own hasEnoughData-style flags), so
+  // this is safe to compute unconditionally.
   const analytics = useMemo(
     () => computeCoachAnalytics({ history, plan, goals, substitutionHistory, weeklyTarget }),
     [history, plan, goals, substitutionHistory, weeklyTarget]
   );
 
-  const today = new Date().toLocaleDateString(undefined, TODAY_FORMAT);
-
-  const latestReadiness = history[0]?.readiness ?? null;
-  const readinessSummary = latestReadiness
-    ? READINESS_FIELD_LABELS.map(({ key, label }) => (latestReadiness[key] !== null ? `${label} ${latestReadiness[key]}/10` : null))
-        .filter((part): part is string => part !== null)
-        .join(", ")
-    : null;
+  const thisWeekVolume = analytics.volume.weekly[analytics.volume.weekly.length - 1]?.volume ?? null;
+  const topRecommendation = analytics.recommendations[0] ?? null;
 
   return (
     <div className="motion-safe:animate-step-in flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Welcome back</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{today}</p>
-          {readinessSummary && (
-            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">Last check-in — {readinessSummary}</p>
-          )}
-        </div>
-        <QuickActions
-          onViewPlan={onGoToPlan}
-          onViewHistory={onGoToHistory}
-          onGoToInsights={onGoToInsights}
-          onGoToSettings={onGoToSettings}
-        />
-      </div>
+      <DashboardHeader
+        displayName={displayName}
+        streakDays={stats.streakDays}
+        workoutsThisWeek={weekly.workoutsThisWeek}
+        weeklyTarget={weeklyTarget}
+      />
 
-      <TodayWorkout info={todayInfo} onStart={onStartWorkout} onResume={onResumeWorkout} onGoToPlan={onGoToPlan} />
+      <TodayWorkout
+        info={todayInfo}
+        activeWorkout={activeWorkout}
+        onStart={onStartWorkout}
+        onResume={onResumeWorkout}
+        onGoToPlan={onGoToPlan}
+        onGoToTemplates={onGoToTemplates}
+      />
 
-      {history.length > 0 && (
-        <DashboardSpotlight
-          analytics={analytics}
-          weightUnit={weightUnit}
-          fallbackInsight={recommendation.message}
-          onGoToInsights={onGoToInsights}
-        />
-      )}
+      <KeyMetrics
+        streakDays={stats.streakDays}
+        workoutsThisWeek={weekly.workoutsThisWeek}
+        recentPRCount={recentPRs.length}
+        recovery={analytics.recovery}
+      />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatsCard icon="🔥" label="Current streak" value={`${stats.streakDays} day${stats.streakDays === 1 ? "" : "s"}`} />
-        <StatsCard icon="💪" label="Workouts done" value={String(stats.workoutsCompleted)} />
-        <StatsCard icon="🏋" label="PRs earned" value={String(stats.totalPRs)} />
-        <StatsCard icon="⏱" label="Training time" value={`${stats.totalTrainingMinutes} min`} />
-      </div>
+      <WeeklyProgress
+        progress={weekly}
+        weeklyTarget={weeklyTarget}
+        streakDays={stats.streakDays}
+        volumeThisWeek={thisWeekVolume}
+        volumeChangePercent={analytics.weeklyReport.volumeChangePercent}
+        weightUnit={weightUnit}
+      />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <RecentPRs prs={recentPRs} onSelectExercise={onSelectExercise} />
-        <WeeklyProgress progress={weekly} weeklyTarget={weeklyTarget} />
-      </div>
+      <CoachInsight topRecommendation={topRecommendation} hasHistory={history.length > 0} onGoToInsights={onGoToInsights} />
 
       <GoalsSummary goals={goals} history={history} onGoToInsights={onGoToInsights} />
 
-      <RecentActivity workouts={recentActivity} onView={onViewHistoryEntry} />
+      <RecentActivity workouts={recentActivity} recentPRs={recentPRs} onView={onViewHistoryEntry} onSelectExercise={onSelectExercise} />
 
-      <div className="border-t border-slate-200 pt-6">
+      <div className="border-t border-border pt-6">
         <CoachSection
           history={history}
           plan={plan}
@@ -160,8 +137,6 @@ export default function Dashboard({
           weeklyTarget={weeklyTarget}
           weightUnit={weightUnit}
           analytics={analytics}
-          streakDays={stats.streakDays}
-          recentPRs={recentPRs}
         />
       </div>
     </div>

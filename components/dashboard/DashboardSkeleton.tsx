@@ -1,20 +1,18 @@
-import { SkeletonBlock, SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
+import { SkeletonCard, SkeletonText } from "@/components/ui/Skeleton";
 
-// Mirrors Dashboard.tsx's layout (header, today's workout, stat row, two
-// 2-column card grids, recent activity, coach section) so the page doesn't
-// shift once real data replaces it (PART 1: "prevent layout shift").
+// Mirrors Dashboard.tsx's Phase 10B layout (greeting, hero card, key
+// metrics row, weekly progress, coach insight, goals, recent activity) so
+// the page doesn't shift once real data replaces it.
 export default function DashboardSkeleton() {
   return (
     <div role="status" aria-label="Loading dashboard" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-2">
-          <SkeletonText className="w-40" />
-          <SkeletonText className="w-28" />
-        </div>
-        <SkeletonBlock className="h-9 w-40" />
+      <div className="flex flex-col gap-2">
+        <SkeletonText className="w-48" />
+        <SkeletonText className="w-56" />
+        <SkeletonText className="w-40" />
       </div>
 
-      <SkeletonCard className="h-32" />
+      <SkeletonCard className="h-40" />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -22,16 +20,9 @@ export default function DashboardSkeleton() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <SkeletonCard className="h-40" />
-        <SkeletonCard className="h-40" />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <SkeletonCard className="h-32" />
-        <SkeletonCard className="h-32" />
-      </div>
-
+      <SkeletonCard className="h-36" />
+      <SkeletonCard className="h-24" />
+      <SkeletonCard className="h-28" />
       <SkeletonCard className="h-48" />
     </div>
   );

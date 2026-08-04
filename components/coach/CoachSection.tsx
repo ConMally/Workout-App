@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import type { WorkoutPlan } from "@/types/workout";
 import type { CompletedWorkout, WeightUnit } from "@/types/workout-log";
 import type { Goal } from "@/types/goals";
-import type { DatedPersonalRecord } from "@/types/dashboard";
 import type { CoachAnalytics } from "@/types/analytics";
 import { useTrackEvent } from "@/lib/analytics-events/useTrackEvent";
 import RecommendationsList from "./RecommendationsList";
@@ -21,27 +20,20 @@ interface CoachSectionProps {
   goals: Goal[];
   weeklyTarget: number | null;
   weightUnit: WeightUnit;
-  // Already computed once by Dashboard.tsx (see components/dashboard/Dashboard.tsx)
-  // — reused here rather than recomputed, per PART 10's "avoid duplicate work."
-  streakDays: number;
-  recentPRs: DatedPersonalRecord[];
   analytics: CoachAnalytics;
 }
 
 // Every card below only ever receives already-computed results as props —
-// Dashboard.tsx is now the single place that calls computeCoachAnalytics
-// (Phase 7: lifted up so its top-of-page DashboardSpotlight can reuse the
-// same object instead of a second computation), mirroring how
-// InsightsPage.tsx already treats lib/insights.ts (see PART 9/10: analytics
-// stays out of components).
+// Dashboard.tsx is the single place that calls computeCoachAnalytics,
+// mirroring how InsightsPage.tsx already treats lib/insights.ts (see
+// PART 9/10: analytics stays out of components). Streak/recent-PR counts
+// are shown once, in Dashboard.tsx's KeyMetrics — not repeated here.
 export default function CoachSection({
   history,
   plan,
   goals,
   weeklyTarget,
   weightUnit,
-  streakDays,
-  recentPRs,
   analytics,
 }: CoachSectionProps) {
   // Dismissal is session-scoped (cleared on reload), not persisted — every
@@ -71,9 +63,9 @@ export default function CoachSection({
 
   if (history.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-10 text-center">
-        <p className="text-sm font-medium text-slate-600">Your coach is warming up</p>
-        <p className="mx-auto mt-1 max-w-xs text-sm text-slate-400">
+      <div className="rounded-[var(--card-radius)] border border-dashed border-border bg-surface-muted px-6 py-10 text-center">
+        <p className="text-sm font-medium text-text-secondary">Your coach is warming up</p>
+        <p className="mx-auto mt-1 max-w-xs text-sm text-text-muted">
           Complete a workout to start getting personalized recommendations, progression targets, and a recovery score.
         </p>
       </div>
@@ -82,17 +74,7 @@ export default function CoachSection({
 
   return (
     <section aria-label="Coach" className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-slate-900">Coach</h2>
-        <div className="flex items-center gap-3 text-xs text-slate-500">
-          <span>
-            🔥 {streakDays} day{streakDays === 1 ? "" : "s"}
-          </span>
-          <span>
-            🏋 {recentPRs.length} recent PR{recentPRs.length === 1 ? "" : "s"}
-          </span>
-        </div>
-      </div>
+      <h2 className="text-section-heading text-text-primary">Coach</h2>
 
       <RecommendationsList
         recommendations={analytics.recommendations}
@@ -113,16 +95,16 @@ export default function CoachSection({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <NextTargetsCard targets={analytics.overloadTargets} weightUnit={weightUnit} />
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Goal progress</h3>
+        <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+          <h3 className="text-label">Goal progress</h3>
           <div className="mt-3">
             <GoalProgressChart goals={goals} history={history} />
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Consistency</h3>
+      <div className="rounded-[var(--card-radius)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <h3 className="text-label">Consistency</h3>
         <div className="mt-3 overflow-x-auto">
           <ConsistencyCalendar history={history} />
         </div>

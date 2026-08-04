@@ -45,7 +45,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
+    <main className="mx-auto flex min-h-screen w-full max-w-[var(--page-max-width)] flex-col gap-6 px-4 pt-8 pb-24 sm:gap-8 sm:px-6 sm:pt-12 sm:pb-12">
       <AppHeader activeTab="account" variant="external" />
 
       <Link

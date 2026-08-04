@@ -2,8 +2,8 @@ import type { RecoveryResult, RecoveryStatus } from "@/types/analytics";
 
 // Color is always paired with a text label and an icon glyph below — never
 // the only indicator of status (see PART 11 accessibility requirement).
-// Exported so components/dashboard/DashboardSpotlight.tsx's condensed
-// recovery tile uses the exact same labels/icons instead of a second copy.
+// Exported so components/dashboard/KeyMetrics.tsx's compact recovery tile
+// uses the exact same labels/icons instead of a second copy.
 export const RECOVERY_STATUS_META: Record<RecoveryStatus, { label: string; icon: string; className: string }> = {
   recovered: { label: "Recovered", icon: "✅", className: "border-teal-200 bg-teal-50 text-teal-800" },
   moderate: { label: "Moderate", icon: "🟡", className: "border-amber-200 bg-amber-50 text-amber-800" },
