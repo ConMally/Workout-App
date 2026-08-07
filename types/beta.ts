@@ -20,7 +20,13 @@ export type AnalyticsEventName =
   | "exercise_favorited"
   | "workout_edited"
   | "settings_changed"
-  | "coach_recommendation_opened";
+  | "coach_recommendation_opened"
+  // Phase 11B: mid-workout exercise editing — distinct from "workout_edited"
+  // above, which is specifically the Plan-level day/exercise editor
+  // (app/page.tsx#handleSavePlanEdits), not the in-progress active workout.
+  | "active_workout_exercise_added"
+  | "active_workout_exercise_replaced"
+  | "active_workout_exercise_deleted";
 
 // Every value must be a small structural fact (a count, a category, a
 // boolean) — never an exercise name, weight, or other workout content. See

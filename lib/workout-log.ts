@@ -1,5 +1,6 @@
 import type { WorkoutPlan } from "@/types/workout";
 import type { ActiveWorkout, CompletedWorkout, LoggedExercise } from "@/types/workout-log";
+import type { ExerciseDefinition } from "@/types/exercises";
 import { getExerciseByName } from "./exercises/library";
 
 // Pure construction and derivation helpers for the workout-log domain —
@@ -21,6 +22,23 @@ type TrainingDay = WorkoutPlan["weeklySchedule"][number];
 // through directly would; only a legacy/unresolved exercise ever falls
 // through to a null exerciseId here.
 export function createActiveWorkout(day: TrainingDay, dayIndex: number): ActiveWorkout {
+  const exercises = day.exercises.map((exercise) => ({
+    id: crypto.randomUUID(),
+    name: exercise.name,
+    exerciseId: getExerciseByName(exercise.name)?.id ?? null,
+    targetSets: exercise.sets,
+    targetReps: exercise.reps,
+    targetRestSeconds: exercise.restSeconds,
+    sets: Array.from({ length: exercise.sets }, (_, i) => ({
+      setNumber: i + 1,
+      weight: null,
+      reps: null,
+      completed: false,
+    })),
+    completed: false,
+    note: "",
+  }));
+
   return {
     id: crypto.randomUUID(),
     startedAt: new Date().toISOString(),
@@ -28,22 +46,46 @@ export function createActiveWorkout(day: TrainingDay, dayIndex: number): ActiveW
     dayLabel: day.day,
     dayTitle: day.title,
     dayFocus: day.focus,
-    exercises: day.exercises.map((exercise) => ({
-      name: exercise.name,
-      exerciseId: getExerciseByName(exercise.name)?.id ?? null,
-      targetSets: exercise.sets,
-      targetReps: exercise.reps,
-      targetRestSeconds: exercise.restSeconds,
-      sets: Array.from({ length: exercise.sets }, (_, i) => ({
-        setNumber: i + 1,
-        weight: null,
-        reps: null,
-        completed: false,
-      })),
-      completed: false,
-      note: "",
-    })),
+    exercises,
     activeExerciseIndex: 0,
+    activeExerciseId: exercises[0]?.id ?? null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Phase 11B: mid-workout exercise editing — pure construction helpers.
+// Actual persistence (insert/replace/delete/reorder rows) lives in the
+// active-workout repository (local: direct array edits + writeActiveWorkout;
+// Supabase: the add/replace/delete/reorder_active_workout_exercise(s) RPCs,
+// see supabase/migrations/0015_active_workout_editing.sql) — this file stays
+// pure/storage-free per its header comment, so these only ever build the
+// LoggedExercise shape a caller then hands to that repository layer.
+// ---------------------------------------------------------------------------
+
+// Sets/reps/rest default from the library definition's own recommendations
+// (min of the recommended rest range, "min-max" rep string) — same
+// convention as lib/templates.ts#templateExerciseFromDefinition, reused here
+// so "Add Exercise" during an active workout and "Add Exercise" while
+// building a template default identically. `sets` starts at 3 for the same
+// reason templateExerciseFromDefinition does: a reasonable universal
+// starting point, always editable before confirming.
+export function activeWorkoutExerciseFromDefinition(definition: ExerciseDefinition): LoggedExercise {
+  const targetSets = 3;
+  return {
+    id: crypto.randomUUID(),
+    name: definition.name,
+    exerciseId: definition.id,
+    targetSets,
+    targetReps: `${definition.recommendedRepRange.min}-${definition.recommendedRepRange.max}`,
+    targetRestSeconds: definition.recommendedRestSeconds.min,
+    sets: Array.from({ length: targetSets }, (_, i) => ({
+      setNumber: i + 1,
+      weight: null,
+      reps: null,
+      completed: false,
+    })),
+    completed: false,
+    note: "",
   };
 }
 
@@ -119,10 +161,43 @@ export function getFirstIncompleteExercise(exercises: LoggedExercise[]): number 
 
 // Validates a persisted activeExerciseIndex against the workout's current
 // exercise list — out-of-range (or null, e.g. a workout saved before this
-// field existed) safely falls back rather than pointing at nothing.
+// field existed) safely falls back rather than pointing at nothing. Still
+// used as one link in resolveActiveExerciseId's fallback chain below (for
+// legacy workouts with no activeExerciseId yet), and as the very last resort
+// there too.
 export function resolveActiveExerciseIndex(exercises: LoggedExercise[], savedIndex: number | null): number {
   if (savedIndex !== null && savedIndex >= 0 && savedIndex < exercises.length) return savedIndex;
   return getFirstIncompleteExercise(exercises);
+}
+
+// Phase 11B: resolves which exercise row should be focused, returning its
+// stable id rather than an array index — array position is no longer a safe
+// identity now that add/delete/reorder can change it mid-workout (see
+// components/workout/ActiveWorkoutEditor.tsx). Exactly the fallback chain
+// PART 7 of the phase spec calls for:
+//   1. the saved activeExerciseId, if it still resolves to a real exercise
+//      in the current list (handles the common case, and also correctly
+//      "loses" focus rather than misattributing it if that exact row was
+//      just deleted — callers should re-resolve after any edit rather than
+//      trusting a stale id).
+//   2. the legacy activeExerciseIndex, for a workout saved before
+//      activeExerciseId existed (or before this session ever wrote one).
+//   3. the first incomplete exercise.
+//   4. the first exercise, if every one is complete.
+// (3) and (4) are already exactly what resolveActiveExerciseIndex/
+// getFirstIncompleteExercise fall back to, so this only adds the id-lookup
+// step in front of it.
+export function resolveActiveExerciseId(
+  exercises: LoggedExercise[],
+  savedId: string | null,
+  savedIndex: number | null
+): string {
+  if (savedId !== null) {
+    const match = exercises.find((exercise) => exercise.id === savedId);
+    if (match) return match.id;
+  }
+  const index = resolveActiveExerciseIndex(exercises, savedIndex);
+  return exercises[index]?.id ?? exercises[0]?.id ?? "";
 }
 
 // The first not-yet-completed set within one exercise, or -1 once every set

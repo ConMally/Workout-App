@@ -35,7 +35,8 @@ import type { WorkoutPlan } from "@/types/workout";
 import type { Goal } from "@/types/goals";
 import type { DatedPersonalRecord } from "@/types/dashboard";
 import type { TemplateSummary, WorkoutTemplate } from "@/types/templates";
-import { createTemplate as buildTemplate, toTemplateSummary } from "@/lib/templates";
+import { createTemplate as buildTemplate, moveItem, toTemplateSummary } from "@/lib/templates";
+import type { NewActiveWorkoutExerciseInput, ReplaceActiveWorkoutExerciseInput } from "@/lib/repositories/active-workout-repository";
 import {
   DEFAULT_SETTINGS,
   type ActiveWorkout,
@@ -389,6 +390,101 @@ export default function Home() {
 
     setActiveWorkout(workout);
     runMutation(() => repositories.activeWorkout.saveActiveWorkout(userId, workout));
+  }
+
+  // ---------------------------------------------------------------------
+  // Phase 11B: mid-workout exercise editing. Unlike handleUpdateActiveWorkout
+  // above (fire-and-forget, matching every set-logging edit), these are
+  // AWAITED before touching state — ActiveWorkoutEditor calls them from a
+  // deliberate guided flow (its own try/catch shows the error inline, same
+  // convention as template create/edit — see TemplateList.tsx), and a
+  // failed add/replace/delete/reorder must never appear to have succeeded
+  // client-side when the write didn't actually happen (PART 8: "avoid
+  // partial states"). Each repository call is the single source of truth
+  // for the resulting exercise row(s); local state is patched from what it
+  // returns rather than recomputed independently, so the on-screen list can
+  // never drift from what's actually persisted.
+  // ---------------------------------------------------------------------
+
+  async function handleAddActiveWorkoutExercise(input: NewActiveWorkoutExerciseInput) {
+    if (!activeWorkout || reposState.status !== "ready") return;
+    const { repositories, userId } = reposState;
+
+    const newExercise = await repositories.activeWorkout.addExercise(userId, activeWorkout.id, input);
+    setActiveWorkout({ ...activeWorkout, exercises: [...activeWorkout.exercises, newExercise] });
+    trackEvent("active_workout_exercise_added");
+  }
+
+  async function handleReplaceActiveWorkoutExercise(exerciseId: string, input: ReplaceActiveWorkoutExerciseInput) {
+    if (!activeWorkout || reposState.status !== "ready") return;
+    const { repositories, userId } = reposState;
+
+    const result = await repositories.activeWorkout.replaceExercise(userId, activeWorkout.id, exerciseId, input);
+    const index = activeWorkout.exercises.findIndex((exercise) => exercise.id === exerciseId);
+    if (index === -1) return;
+
+    const nextExercises = [...activeWorkout.exercises];
+    nextExercises[index] = result.replaced;
+    if (result.added) nextExercises.splice(index + 1, 0, result.added);
+
+    // "In place" (no completed sets, `result.added` is null): the row id is
+    // unchanged, so whatever was focused stays correctly focused with no
+    // extra bookkeeping (PART 10: "remain focused on the replacement").
+    // "Keep completed sets": the original exercise is now closed out with
+    // nothing left to log, so if it was the one focused, move focus onto
+    // its freshly-inserted replacement instead of leaving the user stranded
+    // on a finished exercise.
+    const nextActiveExerciseId =
+      result.added && activeWorkout.activeExerciseId === exerciseId ? result.added.id : activeWorkout.activeExerciseId;
+
+    setActiveWorkout({
+      ...activeWorkout,
+      exercises: nextExercises,
+      activeExerciseId: nextActiveExerciseId,
+      activeExerciseIndex: nextExercises.findIndex((exercise) => exercise.id === nextActiveExerciseId),
+    });
+    trackEvent("active_workout_exercise_replaced", { keptCompletedSets: input.keepCompleted });
+  }
+
+  // Deliberately does not compute a next activeExerciseId here — if the
+  // deleted exercise was the focused one, useActiveExerciseNavigation's own
+  // safety-net effect (lib/useActiveExerciseNavigation.ts) detects that its
+  // tracked id disappeared from the next `exercises` array on the very next
+  // render and re-resolves focus using PART 10's exact "next incomplete,
+  // else previous, never blank" rule, persisting the correction back
+  // through the same onUpdateWorkout path as any other navigation. Doing it
+  // twice (here and in the hook) would just be redundant.
+  async function handleDeleteActiveWorkoutExercise(exerciseId: string) {
+    if (!activeWorkout || reposState.status !== "ready") return;
+    const { repositories, userId } = reposState;
+
+    await repositories.activeWorkout.deleteExercise(userId, activeWorkout.id, exerciseId);
+    setActiveWorkout({ ...activeWorkout, exercises: activeWorkout.exercises.filter((exercise) => exercise.id !== exerciseId) });
+    trackEvent("active_workout_exercise_deleted");
+  }
+
+  // Move Up/Move Down (PART 2/6) — swaps the exercise with its neighbor
+  // using the same moveItem primitive TemplateDayEditor already uses for
+  // identical up/down controls, then persists the resulting full order via
+  // reorderExercises. activeExerciseId is untouched — reordering never
+  // changes which exercise is focused, only where it sits in the list (PART
+  // 10: "remain focused on the same exercise row ID").
+  async function handleMoveActiveWorkoutExercise(exerciseId: string, direction: "up" | "down") {
+    if (!activeWorkout || reposState.status !== "ready") return;
+    const { repositories, userId } = reposState;
+
+    const index = activeWorkout.exercises.findIndex((exercise) => exercise.id === exerciseId);
+    if (index === -1) return;
+
+    const nextExercises = moveItem(activeWorkout.exercises, index, direction);
+    if (nextExercises === activeWorkout.exercises) return;
+
+    await repositories.activeWorkout.reorderExercises(
+      userId,
+      activeWorkout.id,
+      nextExercises.map((exercise) => exercise.id)
+    );
+    setActiveWorkout({ ...activeWorkout, exercises: nextExercises });
   }
 
   // Single generic settings mutator (Phase 7) — replaces the old one-handler-
@@ -1040,6 +1136,12 @@ export default function Home() {
                   onFinish={handleFinishWorkout}
                   onDiscard={handleDiscardWorkout}
                   onSelectExercise={setSelectedExercise}
+                  favoriteExerciseIds={favoriteExerciseIds}
+                  onToggleExerciseFavorite={handleToggleExerciseFavorite}
+                  onAddExercise={handleAddActiveWorkoutExercise}
+                  onReplaceExercise={handleReplaceActiveWorkoutExercise}
+                  onDeleteExercise={handleDeleteActiveWorkoutExercise}
+                  onMoveExercise={handleMoveActiveWorkoutExercise}
                 />
               )}
             </>

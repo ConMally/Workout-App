@@ -6,6 +6,10 @@ import type {
   AppSettings,
   CompletedWorkout,
 } from "@/types/workout-log";
+import type {
+  NewActiveWorkoutExerciseInput,
+  ReplaceActiveWorkoutExerciseInput,
+} from "@/lib/repositories/active-workout-repository";
 import {
   computeDurationSeconds,
   formatElapsedClock,
@@ -16,6 +20,7 @@ import { useActiveExerciseNavigation } from "@/lib/useActiveExerciseNavigation";
 import { useSwipeGesture } from "@/lib/useSwipeGesture";
 import FocusedExercise from "./FocusedExercise";
 import WorkoutOverviewDrawer from "./WorkoutOverviewDrawer";
+import ActiveWorkoutEditor from "./ActiveWorkoutEditor";
 import RestTimer, { type RestTimerTrigger } from "./RestTimer";
 import Button from "@/components/ui/Button";
 
@@ -65,6 +70,17 @@ interface ActiveWorkoutProps {
   onFinish: () => void;
   onDiscard: () => void;
   onSelectExercise: (name: string) => void;
+  // Phase 11B: mid-workout exercise editing — already scoped to this
+  // specific workout/user by app/page.tsx (which owns the repository
+  // calls), so this component just forwards them straight through to
+  // ActiveWorkoutEditor without needing to know about userId/repositories
+  // itself, same as every other handler prop here.
+  favoriteExerciseIds: Set<string>;
+  onToggleExerciseFavorite: (exerciseId: string) => void;
+  onAddExercise: (input: NewActiveWorkoutExerciseInput) => Promise<void>;
+  onReplaceExercise: (exerciseId: string, input: ReplaceActiveWorkoutExerciseInput) => Promise<void>;
+  onDeleteExercise: (exerciseId: string) => Promise<void>;
+  onMoveExercise: (exerciseId: string, direction: "up" | "down") => Promise<void>;
 }
 
 // Phase 6.1: focused one-exercise-at-a-time active workout, built around
@@ -82,17 +98,30 @@ export default function ActiveWorkout({
   onFinish,
   onDiscard,
   onSelectExercise,
+  favoriteExerciseIds,
+  onToggleExerciseFavorite,
+  onAddExercise,
+  onReplaceExercise,
+  onDeleteExercise,
+  onMoveExercise,
 }: ActiveWorkoutProps) {
   const [restTrigger, setRestTrigger] = useState<RestTimerTrigger | null>(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const isFirstNavRef = useRef(true);
 
   const nav = useActiveExerciseNavigation({
     workoutId: workout.id,
     exercises: workout.exercises,
+    savedId: workout.activeExerciseId,
     savedIndex: workout.activeExerciseIndex,
-    onIndexChange: (index) => onUpdateWorkout({ ...workout, activeExerciseIndex: index }),
+    onIdChange: (id) =>
+      onUpdateWorkout({
+        ...workout,
+        activeExerciseId: id,
+        activeExerciseIndex: workout.exercises.findIndex((exercise) => exercise.id === id),
+      }),
   });
 
   const [elapsedSeconds, setElapsedSeconds] = useState(() => computeDurationSeconds(workout.startedAt) ?? 0);
@@ -106,14 +135,18 @@ export default function ActiveWorkout({
   // Move focus to the newly-focused exercise's heading after an explicit
   // navigation action — never on first mount, which would steal focus from
   // wherever it already was when this tab opened (PART 10: "preserve
-  // logical focus after changing exercises").
+  // logical focus after changing exercises"). Keyed on nav.activeId, not
+  // nav.activeIndex (Phase 11B) — a reorder can change the focused
+  // exercise's index without changing which exercise is focused, and that
+  // must not steal focus or remount FocusedExercise (see this file's
+  // FocusedExercise `key` below).
   useEffect(() => {
     if (isFirstNavRef.current) {
       isFirstNavRef.current = false;
       return;
     }
     headingRef.current?.focus();
-  }, [nav.activeIndex]);
+  }, [nav.activeId]);
 
   const activeExercise = workout.exercises[nav.activeIndex];
   const progress = getWorkoutCompletionProgress(workout.exercises);
@@ -204,9 +237,21 @@ export default function ActiveWorkout({
               {progress.completedExercises}/{progress.totalExercises} exercises · {progress.completedSets}/
               {progress.totalSets} sets
             </span>
-            <button type="button" onClick={() => setOverviewOpen(true)} className="font-medium text-accent hover:underline">
-              View full workout
-            </button>
+            <span className="flex items-center gap-2">
+              <button type="button" onClick={() => setOverviewOpen(true)} className="font-medium text-accent hover:underline">
+                View full workout
+              </button>
+              <span aria-hidden="true" className="text-text-muted">
+                ·
+              </span>
+              {/* PART 1/13 of Phase 11B: the "edit today's workout" entry
+                  point — deliberately a small text link in this metadata
+                  row rather than a prominent button, so it never competes
+                  visually with logging the current set. */}
+              <button type="button" onClick={() => setEditorOpen(true)} className="font-medium text-accent hover:underline">
+                Edit workout
+              </button>
+            </span>
           </div>
 
           <div
@@ -264,7 +309,7 @@ export default function ActiveWorkout({
 
       <div onTouchStart={swipeHandlers.onTouchStart} onTouchEnd={swipeHandlers.onTouchEnd}>
         <FocusedExercise
-          key={nav.activeIndex}
+          key={nav.activeId}
           headingRef={headingRef}
           exercise={activeExercise}
           exerciseIndex={nav.activeIndex}
@@ -296,12 +341,31 @@ export default function ActiveWorkout({
       {overviewOpen && (
         <WorkoutOverviewDrawer
           exercises={workout.exercises}
-          activeIndex={nav.activeIndex}
-          onSelect={(index) => {
-            nav.goTo(index);
+          activeExerciseId={nav.activeId}
+          onSelect={(id) => {
+            nav.goTo(id);
             setOverviewOpen(false);
           }}
           onClose={() => setOverviewOpen(false)}
+        />
+      )}
+
+      {/* Phase 11B: a separate panel from WorkoutOverviewDrawer above (that
+          one is read-only navigation; this one is the actual editor) —
+          rendered as a sibling of RestTimer below, never nested inside it or
+          given a key that would remount it, so opening/closing the editor
+          can never reset or duplicate the floating rest timer (PART 9). */}
+      {editorOpen && (
+        <ActiveWorkoutEditor
+          exercises={workout.exercises}
+          history={history}
+          favoriteIds={favoriteExerciseIds}
+          onToggleFavorite={onToggleExerciseFavorite}
+          onAddExercise={onAddExercise}
+          onReplaceExercise={onReplaceExercise}
+          onDeleteExercise={onDeleteExercise}
+          onMoveExercise={onMoveExercise}
+          onClose={() => setEditorOpen(false)}
         />
       )}
 

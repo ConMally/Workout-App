@@ -76,6 +76,7 @@ function toCompletedWorkout(row: WorkoutRowWithChildren): CompletedWorkout {
     exercises: exercises.map((exercise) => {
       const setRows = requireArray(exercise.completed_workout_sets, "completed_workout_sets", row.id);
       return {
+        id: exercise.id,
         name: exercise.name,
         exerciseId: exercise.exercise_id,
         targetSets: exercise.target_sets,
@@ -107,6 +108,14 @@ async function insertCompletedWorkoutChildren(
     .from("completed_workout_exercises")
     .insert(
       exercises.map((exercise, sortOrder) => ({
+        // Phase 11B: LoggedExercise now carries a client-generated id (see
+        // types/workout-log.ts) — a finished workout's exercises are copied
+        // straight from its ActiveWorkout (see app/page.tsx#handleFinishWorkout),
+        // so writing that same id here (instead of letting Postgres mint a
+        // different one) keeps a workout's exercise identity consistent
+        // across the active -> completed transition, same reasoning as
+        // lib/repositories/supabase/active-workout-repository.ts#insertActiveWorkoutChildren.
+        id: exercise.id,
         user_id: userId,
         completed_workout_id: workoutId,
         sort_order: sortOrder,

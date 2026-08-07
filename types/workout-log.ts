@@ -15,6 +15,18 @@ export const LoggedSetSchema = z.object({
 export type LoggedSet = z.infer<typeof LoggedSetSchema>;
 
 export const LoggedExerciseSchema = z.object({
+  // Phase 11B: stable identity for THIS exercise row within the active
+  // workout — distinct from `exerciseId` below, which identifies which
+  // centralized-library movement it is. This is what makes an exercise
+  // survive reorder/add/delete/replace: array position is no longer a safe
+  // identity now that the list can mutate mid-workout (see
+  // lib/useActiveExerciseNavigation.ts). Defaulted (not required) so every
+  // workout logged/persisted before this field existed still parses — a
+  // fresh id is minted at parse time for those, and the Supabase repository
+  // instead maps this from the real active_workout_exercises.id row id
+  // (see lib/repositories/supabase/active-workout-repository.ts), which is
+  // strictly more stable across reloads than a parse-time-generated one.
+  id: z.string().default(() => crypto.randomUUID()),
   name: z.string(),
   // Stable centralized-exercise-library id, resolved by name/alias at
   // workout-creation time (see lib/workout-log.ts#createActiveWorkout) —
@@ -44,8 +56,20 @@ export const ActiveWorkoutSchema = z.object({
   // Which exercise the focused active-workout UI currently shows (Phase
   // 6.1). Nullable/defaulted so workouts started before this field existed
   // still parse — see lib/workout-log.ts#resolveActiveExerciseIndex for the
-  // fallback when this is null or out of range.
+  // fallback when this is null or out of range. Kept (not removed) after
+  // Phase 11B introduced activeExerciseId below — see that field's comment
+  // for why both coexist.
   activeExerciseIndex: z.number().int().min(0).nullable().default(null),
+  // Phase 11B: the preferred way to persist which exercise is focused,
+  // since the exercise list can now be reordered/added to/deleted from
+  // mid-workout — an index would silently point at the wrong exercise (or
+  // out of range) after any of those edits, where an id degrades instead to
+  // "not found," which is directly and safely recoverable (see
+  // lib/workout-log.ts#resolveActiveExerciseId's fallback chain: saved id ->
+  // legacy index -> first incomplete -> first exercise). Nullable/defaulted
+  // so workouts started before this field existed still parse and fall
+  // back to activeExerciseIndex.
+  activeExerciseId: z.string().nullable().default(null),
 });
 export type ActiveWorkout = z.infer<typeof ActiveWorkoutSchema>;
 

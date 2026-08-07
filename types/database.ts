@@ -301,6 +301,11 @@ export interface Database {
           day_focus: string;
           started_at: string;
           active_exercise_index: number | null;
+          // Phase 11B: stable row-id pointer (see active_workout_exercises.id
+          // below), kept alongside active_exercise_index rather than
+          // replacing it — see 0015_active_workout_editing.sql's header
+          // comment for why both columns coexist.
+          active_exercise_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -314,6 +319,7 @@ export interface Database {
           day_focus: string;
           started_at: string;
           active_exercise_index?: number | null;
+          active_exercise_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -327,6 +333,7 @@ export interface Database {
           day_focus?: string;
           started_at?: string;
           active_exercise_index?: number | null;
+          active_exercise_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -998,6 +1005,42 @@ export interface Database {
       reorder_template_exercises: {
         Args: { p_template_day_id: string; p_exercise_ids: string[] };
         Returns: undefined;
+      };
+      // Phase 11B: mid-workout exercise editing (0015_active_workout_editing.sql)
+      // — see lib/repositories/supabase/active-workout-repository.ts for the
+      // callers.
+      add_active_workout_exercise: {
+        Args: {
+          p_active_workout_id: string;
+          p_name: string;
+          p_exercise_id: string | null;
+          p_target_sets: number;
+          p_target_reps: string;
+          p_target_rest_seconds: number;
+          p_note?: string;
+        };
+        Returns: string;
+      };
+      delete_active_workout_exercise: {
+        Args: { p_active_workout_id: string; p_exercise_id: string };
+        Returns: undefined;
+      };
+      reorder_active_workout_exercises: {
+        Args: { p_active_workout_id: string; p_exercise_ids: string[] };
+        Returns: undefined;
+      };
+      replace_active_workout_exercise: {
+        Args: {
+          p_active_workout_id: string;
+          p_exercise_id: string;
+          p_keep_completed: boolean;
+          p_name: string;
+          p_new_exercise_id: string | null;
+          p_target_sets: number;
+          p_target_reps: string;
+          p_target_rest_seconds: number;
+        };
+        Returns: Json;
       };
     };
     Enums: Record<string, never>;
