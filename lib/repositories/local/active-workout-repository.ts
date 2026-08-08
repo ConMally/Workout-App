@@ -48,7 +48,28 @@ export function createLocalActiveWorkoutRepository(): ActiveWorkoutRepository {
       }
 
       const newExercise = buildExercise(input);
-      writeActiveWorkout({ ...workout, exercises: [...workout.exercises, newExercise] });
+
+      // Phase 11C: mirrors the Supabase RPC's rule exactly — null/undefined
+      // (or a stale id no longer in this workout) appends to the end; a
+      // valid id inserts immediately after it. A stale id is rejected with
+      // a clear error rather than silently falling back to append, same
+      // reasoning as the RPC (see
+      // supabase/migrations/0016_active_workout_insert_position.sql).
+      let insertIndex = workout.exercises.length;
+      if (input.insertAfterExerciseId) {
+        const afterIndex = workout.exercises.findIndex((exercise) => exercise.id === input.insertAfterExerciseId);
+        if (afterIndex === -1) {
+          throw new Error(`addExercise: insert-after exercise ${input.insertAfterExerciseId} not found in workout ${workoutId}`);
+        }
+        insertIndex = afterIndex + 1;
+      }
+
+      const nextExercises = [
+        ...workout.exercises.slice(0, insertIndex),
+        newExercise,
+        ...workout.exercises.slice(insertIndex),
+      ];
+      writeActiveWorkout({ ...workout, exercises: nextExercises });
       return newExercise;
     },
 

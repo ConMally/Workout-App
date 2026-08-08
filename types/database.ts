@@ -1018,6 +1018,9 @@ export interface Database {
           p_target_reps: string;
           p_target_rest_seconds: number;
           p_note?: string;
+          // Phase 11C (0016_active_workout_insert_position.sql) — null/omitted
+          // appends (0015's original and still-default behavior).
+          p_insert_after_exercise_id?: string | null;
         };
         Returns: string;
       };

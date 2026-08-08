@@ -267,6 +267,10 @@ export function createSupabaseActiveWorkoutRepository(client: SupabaseClient<Dat
         p_target_reps: input.targetReps,
         p_target_rest_seconds: input.targetRestSeconds,
         p_note: input.note,
+        // Phase 11C — null/undefined appends (0015's original behavior); a
+        // stale id the RPC can't find in this workout raises rather than
+        // silently falling back (see 0016_active_workout_insert_position.sql).
+        p_insert_after_exercise_id: input.insertAfterExerciseId ?? null,
       });
       if (error) throw error;
 

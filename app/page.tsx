@@ -406,12 +406,36 @@ export default function Home() {
   // never drift from what's actually persisted.
   // ---------------------------------------------------------------------
 
+  // Phase 11C: splices the new exercise at the exact same position the
+  // repository/RPC just used — immediately after `insertAfterExerciseId` if
+  // given, otherwise appended to the end (mirrors
+  // lib/repositories/local/active-workout-repository.ts#addExercise and
+  // supabase/migrations/0016_active_workout_insert_position.sql exactly).
+  // A stale insertAfterExerciseId is rejected by the repository call itself
+  // (before any write happens — see both implementations), so this never
+  // runs against a request that silently changed its own meaning.
+  // activeExerciseId/activeExerciseIndex are deliberately left untouched:
+  // inserting either before or at the current exercise's own array position
+  // never happens (insertion only ever happens at-or-after it), so the
+  // existing focus stays valid and unmoved without any extra bookkeeping.
   async function handleAddActiveWorkoutExercise(input: NewActiveWorkoutExerciseInput) {
     if (!activeWorkout || reposState.status !== "ready") return;
     const { repositories, userId } = reposState;
 
     const newExercise = await repositories.activeWorkout.addExercise(userId, activeWorkout.id, input);
-    setActiveWorkout({ ...activeWorkout, exercises: [...activeWorkout.exercises, newExercise] });
+
+    const afterIndex = input.insertAfterExerciseId
+      ? activeWorkout.exercises.findIndex((exercise) => exercise.id === input.insertAfterExerciseId)
+      : -1;
+    const insertIndex = afterIndex === -1 ? activeWorkout.exercises.length : afterIndex + 1;
+
+    const nextExercises = [
+      ...activeWorkout.exercises.slice(0, insertIndex),
+      newExercise,
+      ...activeWorkout.exercises.slice(insertIndex),
+    ];
+
+    setActiveWorkout({ ...activeWorkout, exercises: nextExercises });
     trackEvent("active_workout_exercise_added");
   }
 

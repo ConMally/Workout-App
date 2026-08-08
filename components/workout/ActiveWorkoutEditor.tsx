@@ -17,6 +17,12 @@ interface ActiveWorkoutEditorProps {
   exercises: LoggedExercise[];
   history: CompletedWorkout[];
   favoriteIds: Set<string>;
+  // Phase 11C: the workout's currently-focused exercise id (ActiveWorkout's
+  // nav.activeId), used only to default "Add Exercise" placement to
+  // "after current exercise" — never treated as array position, and never
+  // itself mutated by anything in this component (adding an exercise must
+  // never move focus, see PART 2/7 of the phase spec).
+  currentExerciseId: string | null;
   onToggleFavorite: (exerciseId: string) => void;
   onAddExercise: (input: NewActiveWorkoutExerciseInput) => Promise<void>;
   onReplaceExercise: (exerciseId: string, input: ReplaceActiveWorkoutExerciseInput) => Promise<void>;
@@ -56,6 +62,7 @@ export default function ActiveWorkoutEditor({
   exercises,
   history,
   favoriteIds,
+  currentExerciseId,
   onToggleFavorite,
   onAddExercise,
   onReplaceExercise,
@@ -97,7 +104,7 @@ export default function ActiveWorkoutEditor({
 
   async function handleAddConfirmed(
     definition: ExerciseDefinition,
-    values: { targetSets: number; targetReps: string; targetRestSeconds: number; note: string }
+    values: { targetSets: number; targetReps: string; targetRestSeconds: number; note: string; insertAfterExerciseId: string | null }
   ) {
     await runAction("add", () =>
       onAddExercise({
@@ -107,6 +114,7 @@ export default function ActiveWorkoutEditor({
         targetReps: values.targetReps,
         targetRestSeconds: values.targetRestSeconds,
         note: values.note,
+        insertAfterExerciseId: values.insertAfterExerciseId,
       })
     );
     setStep({ mode: "list" });
@@ -275,6 +283,13 @@ export default function ActiveWorkoutEditor({
       {step.mode === "add-configure" && (
         <AddExerciseConfigureDialog
           definition={step.definition}
+          // Re-looked-up from the live `exercises` prop (not captured once
+          // at the moment "+ Add Exercise" was clicked) so a currentExerciseId
+          // that stopped existing in the meantime (PART 9: "current exercise
+          // was deleted between opening and confirming") is naturally
+          // treated as "no valid current exercise" — the placement choice
+          // just doesn't appear, and it silently, correctly appends.
+          currentExercise={exercises.find((exercise) => exercise.id === currentExerciseId) ?? null}
           busy={busyKey === "add"}
           onConfirm={(values) => handleAddConfirmed(step.definition, values)}
           onCancel={() => setStep({ mode: "list" })}
@@ -314,13 +329,26 @@ export default function ActiveWorkoutEditor({
 
 function AddExerciseConfigureDialog({
   definition,
+  currentExercise,
   busy,
   onConfirm,
   onCancel,
 }: {
   definition: ExerciseDefinition;
+  // Phase 11C — null means "no valid current exercise to insert after"
+  // (PART 1/9: a fresh/just-started workout with nothing focused yet, or a
+  // currentExerciseId that no longer resolves), in which case the
+  // placement choice isn't shown at all and this silently, correctly
+  // appends instead.
+  currentExercise: LoggedExercise | null;
   busy: boolean;
-  onConfirm: (values: { targetSets: number; targetReps: string; targetRestSeconds: number; note: string }) => void;
+  onConfirm: (values: {
+    targetSets: number;
+    targetReps: string;
+    targetRestSeconds: number;
+    note: string;
+    insertAfterExerciseId: string | null;
+  }) => void;
   onCancel: () => void;
 }) {
   // Sensible defaults from the library definition's own recommendations
@@ -331,6 +359,8 @@ function AddExerciseConfigureDialog({
   const [targetReps, setTargetReps] = useState(defaults.targetReps);
   const [targetRestSeconds, setTargetRestSeconds] = useState(defaults.targetRestSeconds);
   const [note, setNote] = useState("");
+  // PART 2: "After current exercise" is the default whenever there is one.
+  const [placement, setPlacement] = useState<"after-current" | "end">(currentExercise ? "after-current" : "end");
 
   return (
     <Dialog onClose={onCancel} titleId="add-exercise-configure-title" className="max-w-sm">
@@ -341,7 +371,42 @@ function AddExerciseConfigureDialog({
         <p className="mt-1 text-supporting">Set your targets, then add it to today&rsquo;s workout.</p>
       </div>
 
-      <div className="flex flex-col gap-3 p-5">
+      {/* Scrolls independently of the header/footer below (PART 10: opening
+          the on-screen keyboard for the Sets/Rest number inputs must never
+          hide the placement control or the Save/Cancel row — those stay put
+          as fixed siblings, only this middle section scrolls). */}
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
+        {currentExercise && (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-0.5 text-xs font-medium text-text-muted">Placement</legend>
+            <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--control-radius)] border border-border px-3 py-3 text-sm text-text-primary transition has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+              <input
+                type="radio"
+                name="add-exercise-placement"
+                value="after-current"
+                checked={placement === "after-current"}
+                onChange={() => setPlacement("after-current")}
+                className="h-5 w-5 flex-shrink-0 accent-accent"
+              />
+              <span className="min-w-0">
+                After current exercise
+                <span className="block text-xs text-text-muted">{currentExercise.name}</span>
+              </span>
+            </label>
+            <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--control-radius)] border border-border px-3 py-3 text-sm text-text-primary transition has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+              <input
+                type="radio"
+                name="add-exercise-placement"
+                value="end"
+                checked={placement === "end"}
+                onChange={() => setPlacement("end")}
+                className="h-5 w-5 flex-shrink-0 accent-accent"
+              />
+              End of workout
+            </label>
+          </fieldset>
+        )}
+
         <label className="flex flex-col gap-1 text-xs font-medium text-text-muted">
           Sets
           <input
@@ -388,7 +453,7 @@ function AddExerciseConfigureDialog({
         </label>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-border p-4 sm:flex-row sm:justify-end">
+      <div className="flex flex-shrink-0 flex-col gap-2 border-t border-border p-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
@@ -402,6 +467,7 @@ function AddExerciseConfigureDialog({
               targetReps: targetReps.trim() || defaults.targetReps,
               targetRestSeconds,
               note,
+              insertAfterExerciseId: placement === "after-current" && currentExercise ? currentExercise.id : null,
             })
           }
         >

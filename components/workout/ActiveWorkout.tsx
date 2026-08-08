@@ -360,6 +360,7 @@ export default function ActiveWorkout({
           exercises={workout.exercises}
           history={history}
           favoriteIds={favoriteExerciseIds}
+          currentExerciseId={nav.activeId}
           onToggleFavorite={onToggleExerciseFavorite}
           onAddExercise={onAddExercise}
           onReplaceExercise={onReplaceExercise}

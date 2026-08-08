@@ -42,8 +42,10 @@ export interface ActiveWorkoutRepository {
   // explicitly not safe to be used for.
   // ---------------------------------------------------------------------
 
-  // Appends a brand-new exercise (with target-sets-many fresh, unlogged
-  // sets) to the end of the workout. Never touches any existing exercise.
+  // Inserts a brand-new exercise (with target-sets-many fresh, unlogged
+  // sets) into the workout. Never touches any existing exercise's own
+  // fields/sets — only its position may shift to make room. See
+  // NewActiveWorkoutExerciseInput#insertAfterExerciseId for placement.
   addExercise(userId: string, workoutId: string, input: NewActiveWorkoutExerciseInput): Promise<LoggedExercise>;
 
   // Two distinct, mutually exclusive modes selected by the caller via
@@ -77,6 +79,18 @@ export interface NewActiveWorkoutExerciseInput {
   targetReps: string;
   targetRestSeconds: number;
   note: string;
+  // Phase 11C: the existing exercise's stable id to insert the new one
+  // immediately after — never a raw array index (PART 4: "do not use array
+  // position as permanent identity"). null/undefined appends to the end,
+  // 0015's original and still-default behavior for a caller with no
+  // meaningful "current exercise" (e.g. no valid current exercise to insert
+  // after). Both implementations re-validate that this id still belongs to
+  // the workout being edited before using it, and reject rather than
+  // silently reinterpreting it if it doesn't (a stale id from an exercise
+  // deleted between opening and confirming the Add flow) — see
+  // supabase/migrations/0016_active_workout_insert_position.sql and
+  // lib/repositories/local/active-workout-repository.ts#addExercise.
+  insertAfterExerciseId?: string | null;
 }
 
 export interface ReplaceActiveWorkoutExerciseInput {
