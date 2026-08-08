@@ -8,7 +8,20 @@ import type {
   ReplaceActiveWorkoutExerciseResult,
 } from "../active-workout-repository";
 
-const ACTIVE_WORKOUT_WITH_CHILDREN_SELECT = "*, active_workout_exercises(*, active_workout_sets(*))";
+// Explicit FK disambiguation (PGRST201): active_workouts and
+// active_workout_exercises now have TWO relationships between them —
+// active_workout_exercises.active_workout_id -> active_workouts.id (the
+// workout's full exercise list; this is the one this embed wants) and, as
+// of Phase 11B, active_workouts.active_exercise_id -> active_workout_exercises.id
+// (the single currently-focused exercise). A bare `active_workout_exercises(...)`
+// embed is ambiguous between the two and PostgREST rejects it outright —
+// naming the FK constraint (`!active_workout_exercises_active_workout_id_fkey`,
+// the default-generated name for that first FK — see
+// supabase/migrations/0001_init.sql) picks the exercise-list relationship
+// explicitly. Never use `!active_workouts_active_exercise_id_fkey` here —
+// that's the single-focused-exercise relationship, not the list.
+const ACTIVE_WORKOUT_WITH_CHILDREN_SELECT =
+  "*, active_workout_exercises!active_workout_exercises_active_workout_id_fkey(*, active_workout_sets(*))";
 
 type WorkoutRow = Database["public"]["Tables"]["active_workouts"]["Row"];
 type ExerciseRow = Database["public"]["Tables"]["active_workout_exercises"]["Row"];

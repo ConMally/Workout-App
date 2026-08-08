@@ -28,7 +28,7 @@ import SaveAsTemplateDialog from "@/components/templates/SaveAsTemplateDialog";
 import UnsavedChangesDialog from "@/components/templates/UnsavedChangesDialog";
 import type { TemplateEditorSubmitInput } from "@/components/templates/TemplateEditor";
 import { useRepositories } from "@/lib/repositories/useRepositories";
-import { getFriendlyDataErrorMessage, isSessionExpiredMessage, isUniqueViolation } from "@/lib/supabase/data-errors";
+import { getFriendlyDataErrorMessage, isSessionExpiredMessage, isUniqueViolation, logSupabaseError } from "@/lib/supabase/data-errors";
 import { createClient } from "@/lib/supabase/client";
 import { createSupabaseProfileRepository } from "@/lib/repositories/supabase/profile-repository";
 import type { WorkoutPlan } from "@/types/workout";
@@ -117,9 +117,7 @@ async function loadDomain<T>(domain: string, promise: Promise<T>): Promise<T> {
   try {
     return await promise;
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error(`[data-load] ${domain} failed:`, error);
-    }
+    logSupabaseError(`data-load ${domain}`, error);
     throw error;
   }
 }
@@ -289,6 +287,7 @@ export default function Home() {
   // this phase's "no offline mutation queue yet" scope.
   function runMutation(mutate: () => Promise<void>) {
     mutate().catch((error: unknown) => {
+      logSupabaseError("mutation", error);
       setSaveError(getFriendlyDataErrorMessage(error));
     });
   }
@@ -589,6 +588,7 @@ export default function Home() {
 
       await repositories.activeWorkout.clearActiveWorkout(userId);
     } catch (error) {
+      logSupabaseError("finalizeWorkout", error);
       setSaveError(getFriendlyDataErrorMessage(error));
       return;
     }

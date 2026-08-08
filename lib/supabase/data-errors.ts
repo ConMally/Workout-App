@@ -8,6 +8,14 @@
 interface DataErrorLike {
   message?: string;
   code?: string;
+  // Postgrest's own PostgrestError class carries these too (see
+  // node_modules/@supabase/postgrest-js/src/PostgrestError.ts) — `hint` in
+  // particular is often the single most actionable field (e.g. the exact
+  // fix for an ambiguous-embed or RLS error), but neither is on the base
+  // DataErrorLike shape used elsewhere in this file, so logSupabaseError
+  // below reads them separately.
+  details?: string;
+  hint?: string;
 }
 
 const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please log in again.";
@@ -57,4 +65,32 @@ export function getFriendlyDataErrorMessage(error: unknown): string {
 
 function isDataErrorLike(error: unknown): error is DataErrorLike {
   return typeof error === "object" && error !== null && ("message" in error || "code" in error);
+}
+
+// Dev-only structured logging for a raw Supabase/Postgrest error — every
+// data-loading/mutation call site that catches one should log through this
+// instead of `console.error(prefix, error)` directly. A PostgrestError
+// extends Error, and `message` is a non-enumerable own property on any
+// Error instance (per the ECMAScript spec) while `code`/`details`/`hint`
+// are plain enumerable instance fields Postgrest adds — passing the raw
+// object straight to console.error/JSON.stringify is exactly what produces
+// the "only `{}`" symptom in some tooling/log pipelines (Next.js's
+// server-console formatting, log aggregators, anything that JSON-serializes
+// without calling toJSON, etc.), because they don't reliably surface a
+// non-enumerable field the same way an interactive browser console's object
+// inspector does. Destructuring all four fields explicitly here sidesteps
+// that entirely — the fields always end up as plain enumerable properties
+// of the object actually passed to console.error, regardless of what error
+// shape or logging environment is on the other end. No-ops outside
+// development so nothing here ever reaches a production log.
+export function logSupabaseError(context: string, error: unknown): void {
+  if (process.env.NODE_ENV === "production") return;
+
+  const details = isDataErrorLike(error) ? error : null;
+  console.error(`[supabase] ${context} failed:`, {
+    code: details?.code ?? null,
+    message: details?.message ?? (error instanceof Error ? error.message : String(error)),
+    details: details?.details ?? null,
+    hint: details?.hint ?? null,
+  });
 }
